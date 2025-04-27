@@ -10,3 +10,4 @@ license-file = "LICENSE"
 crossbeam-channel = "0.5.15"
 ctrlc = "3.4.6"
 crossterm = "0.29.0"
+clap = { version = "4.5.37", features = ["derive"] }
