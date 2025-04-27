@@ -8,3 +8,19 @@ pub fn run(shell: String, command: Vec<String>) -> error::BodaResult<String> {
 
     return Ok(String::from_utf8_lossy(&output.stdout).to_string());
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let output = run(
+            "/bin/zsh".to_string(),
+            vec!["curl".to_string(), "google.com".to_string()],
+        )
+        .unwrap();
+
+        assert_eq!("", output);
+    }
+}

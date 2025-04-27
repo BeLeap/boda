@@ -6,10 +6,15 @@ use crossbeam_channel::{Sender, bounded, select, tick};
 use crossterm::{
     cursor,
     event::{Event, KeyCode, KeyEvent, poll, read},
-    execute, style, terminal,
+    execute, queue, style, terminal,
     tty::IsTty,
 };
-use std::{env, io, thread, time::Duration};
+use std::{
+    env,
+    io::{self, Write},
+    thread,
+    time::Duration,
+};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -67,7 +72,7 @@ fn main() -> error::BodaResult<()> {
                     Ok(output) => output,
                     Err(e) => format!("error: {}", e),
                 };
-                execute!(
+                queue!(
                     w,
                     style::ResetColor,
                     terminal::Clear(terminal::ClearType::All),
@@ -75,10 +80,18 @@ fn main() -> error::BodaResult<()> {
                     cursor::MoveTo(0, 0),
                     style::Print(now),
                     cursor::MoveToNextLine(1),
-                    style::Print("--------------".to_string()),
-                    cursor::MoveToNextLine(1),
-                    style::Print(output),
+                    style::Print("==============".to_string()),
                 )?;
+
+                for line in output.lines() {
+                    queue!(
+                        w,
+                        cursor::MoveToNextLine(1),
+                        style::Print(line.to_string()),
+                    )?;
+                };
+
+                w.flush()?;
             }
         }
     }
