@@ -8,7 +8,12 @@ use crossterm::{
     execute, style, terminal,
     tty::IsTty,
 };
-use std::{io, thread, time::Duration};
+use std::{
+    env, io,
+    process::Command,
+    thread,
+    time::{Duration, SystemTime},
+};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -28,6 +33,11 @@ fn main() -> error::BodaResult<()> {
         None => 1.0,
     };
 
+    let shell = match env::var("SHELL") {
+        Ok(s) => s,
+        Err(_) => "/bin/sh".to_string(),
+    };
+
     let stdin = io::stdin();
     if !stdin.is_tty() {
         return Err(error::BodaError::Custom(
@@ -35,8 +45,8 @@ fn main() -> error::BodaResult<()> {
         ));
     }
 
-    let mut stdout = io::stdout();
-    execute!(stdout, terminal::EnterAlternateScreen)?;
+    let mut w = io::stdout();
+    execute!(w, terminal::EnterAlternateScreen)?;
     terminal::enable_raw_mode()?;
 
     let tick = tick(Duration::from_millis((interval * 1000.0).round() as u64));
@@ -46,32 +56,56 @@ fn main() -> error::BodaResult<()> {
         handle_keys(end_tx).unwrap();
     });
 
-    let mut idx = 0;
     loop {
         select! {
             recv(end_rx) -> _ => {
                 execute!(
-                    stdout,
+                    w,
                     cursor::SetCursorStyle::DefaultUserShape,
                 )?;
                 break;
             },
             recv(tick) -> _ => {
-                idx += 1;
-                execute!(
-                    stdout,
-                    style::ResetColor,
-                    terminal::Clear(terminal::ClearType::All),
-                    cursor::Hide,
-                    cursor::MoveTo(0, 0),
-                    style::Print(idx.to_string()),
-                )?;
+                let now = chrono::Local::now();
+                let shell = shell.clone();
+                let command = cli.command.clone().join(" ");
+                let output = Command::new(shell)
+                    .arg("-c")
+                    .arg(command)
+                    .output();
+
+                match output {
+                    Ok(output) => {
+                        let stdout = String::from_utf8(output.stdout).expect("not an utf8 string");
+                        execute!(
+                            w,
+                            style::ResetColor,
+                            terminal::Clear(terminal::ClearType::All),
+                            cursor::Hide,
+                            cursor::MoveTo(0, 0),
+                            style::Print(now),
+                            cursor::MoveToNextLine(1),
+                            style::Print(stdout),
+                        )?;
+                    },
+                    Err(e) => {
+                        let out = format!("error: {}", e);
+                        execute!(
+                            w,
+                            style::ResetColor,
+                            terminal::Clear(terminal::ClearType::All),
+                            cursor::Hide,
+                            cursor::MoveTo(0, 0),
+                            style::Print(out),
+                        )?;
+                    },
+                };
             }
         }
     }
 
     execute!(
-        stdout,
+        w,
         style::ResetColor,
         cursor::Show,
         terminal::LeaveAlternateScreen
