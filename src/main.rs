@@ -1,3 +1,4 @@
+mod command;
 mod error;
 
 use clap::Parser;
@@ -8,7 +9,7 @@ use crossterm::{
     execute, style, terminal,
     tty::IsTty,
 };
-use std::{env, io, process::Command, thread, time::Duration};
+use std::{env, io, thread, time::Duration};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -62,16 +63,8 @@ fn main() -> error::BodaResult<()> {
             },
             recv(tick) -> _ => {
                 let now = chrono::Local::now();
-                let shell = shell.clone();
-                let command = cli.command.clone().join(" ");
-                let output = Command::new(shell)
-                    .arg("-c")
-                    .arg(command)
-                    .output();
-
-                match output {
+                match command::run(shell.clone(), cli.command.clone()) {
                     Ok(output) => {
-                        let stdout = String::from_utf8(output.stdout).expect("not an utf8 string");
                         execute!(
                             w,
                             style::ResetColor,
@@ -80,7 +73,9 @@ fn main() -> error::BodaResult<()> {
                             cursor::MoveTo(0, 0),
                             style::Print(now),
                             cursor::MoveToNextLine(1),
-                            style::Print(stdout),
+                            style::Print("--------------".to_string()),
+                            cursor::MoveToNextLine(1),
+                            style::Print(output),
                         )?;
                     },
                     Err(e) => {
