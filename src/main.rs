@@ -1,5 +1,6 @@
 mod error;
 
+use clap::Parser;
 use crossbeam_channel::{Sender, bounded, select, tick};
 use crossterm::{
     cursor,
@@ -9,7 +10,18 @@ use crossterm::{
 };
 use std::{io, thread, time::Duration};
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    #[arg(short, long)]
+    interval: Option<u64>,
+
+    #[arg(last = true)]
+    command: Vec<String>,
+}
+
 fn main() -> error::BodaResult<()> {
+    let cli = Cli::parse();
     let stdin = io::stdin();
     if !stdin.is_tty() {
         return Err(error::BodaError::Custom(
