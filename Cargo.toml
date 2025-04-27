@@ -6,6 +6,12 @@ repository = "https://git.sr.ht/~beleap/boda"
 description = "opinionated alternative watch"
 license-file = "LICENSE"
 
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+panic = "abort"
+
 [dependencies]
 crossbeam-channel = "0.5.15"
 ctrlc = "3.4.6"
