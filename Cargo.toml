@@ -2,6 +2,7 @@
 name = "boda"
 version = "0.1.0"
 edition = "2024"
+repository = "https://git.sr.ht/~beleap/boda"
 
 [dependencies]
 crossbeam-channel = "0.5.15"
