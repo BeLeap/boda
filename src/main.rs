@@ -13,8 +13,8 @@ use std::{io, thread, time::Duration};
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    #[arg(short, long)]
-    interval: Option<u64>,
+    #[arg(short = 'n', long)]
+    interval: Option<f64>,
 
     #[arg(last = true)]
     command: Vec<String>,
@@ -22,6 +22,12 @@ struct Cli {
 
 fn main() -> error::BodaResult<()> {
     let cli = Cli::parse();
+
+    let interval = match cli.interval {
+        Some(i) => i,
+        None => 1.0,
+    };
+
     let stdin = io::stdin();
     if !stdin.is_tty() {
         return Err(error::BodaError::Custom(
@@ -33,7 +39,7 @@ fn main() -> error::BodaResult<()> {
     execute!(stdout, terminal::EnterAlternateScreen)?;
     terminal::enable_raw_mode()?;
 
-    let tick = tick(Duration::from_secs(1));
+    let tick = tick(Duration::from_millis((interval * 1000.0).round() as u64));
     let (end_tx, end_rx) = bounded::<bool>(1);
 
     let key_handler = thread::spawn(move || {
