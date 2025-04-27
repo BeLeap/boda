@@ -1,33 +1,94 @@
 mod error;
 
-use crossbeam_channel::{Receiver, bounded, select, tick};
-use std::time::Duration;
+use crossbeam_channel::{Sender, bounded, select, tick};
+use crossterm::{
+    cursor,
+    event::{Event, KeyCode, KeyEvent, poll, read},
+    execute, style, terminal,
+    tty::IsTty,
+};
+use std::{io, thread, time::Duration};
 
-fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
-    let (sender, receiver) = bounded(100);
-    ctrlc::set_handler(move || {
-        let _ = sender.send(());
-    })?;
+fn main() -> error::BodaResult<()> {
+    let stdin = io::stdin();
+    if !stdin.is_tty() {
+        return Err(error::BodaError::Custom(
+            "Not an interactive terminal".to_string(),
+        ));
+    }
 
-    Ok(receiver)
-}
+    let mut stdout = io::stdout();
+    execute!(stdout, terminal::EnterAlternateScreen)?;
+    terminal::enable_raw_mode()?;
 
-fn main() -> Result<(), error::Error> {
-    let ctrl_c_events = match ctrl_channel() {
-        Ok(c) => c,
-        Err(e) => return Err(error::Error::CtrlC(e)),
-    };
-    let ticks = tick(Duration::from_secs(1));
+    let tick = tick(Duration::from_secs(1));
+    let (end_tx, end_rx) = bounded::<bool>(1);
 
+    let key_handler = thread::spawn(move || {
+        handle_keys(end_tx).unwrap();
+    });
+
+    let mut idx = 0;
     loop {
         select! {
-            recv(ticks) -> _ => {
-                println!("working!");
-            }
-            recv(ctrl_c_events) -> _ => {
-                println!();
-                println!("Goodbye!");
+            recv(end_rx) -> _ => {
+                execute!(
+                    stdout,
+                    cursor::SetCursorStyle::DefaultUserShape,
+                )?;
                 break;
+            },
+            recv(tick) -> _ => {
+                idx += 1;
+                execute!(
+                    stdout,
+                    style::ResetColor,
+                    terminal::Clear(terminal::ClearType::All),
+                    cursor::Hide,
+                    cursor::MoveTo(0, 0),
+                    style::Print(idx.to_string()),
+                )?;
+            }
+        }
+    }
+
+    execute!(
+        stdout,
+        style::ResetColor,
+        cursor::Show,
+        terminal::LeaveAlternateScreen
+    )?;
+    terminal::disable_raw_mode()?;
+    if let Err(_) = key_handler.join() {
+        return Err(error::BodaError::Custom(
+            "failed to join key_handler".to_string(),
+        ));
+    };
+
+    Ok(())
+}
+
+fn handle_keys(end_tx: Sender<bool>) -> error::BodaResult<()> {
+    loop {
+        if poll(Duration::from_secs(1))? {
+            if let Event::Key(KeyEvent {
+                code,
+                modifiers: _,
+                kind: _,
+                state: _,
+            }) = read()?
+            {
+                match code {
+                    KeyCode::Esc => {
+                        end_tx.send(true)?;
+                        break;
+                    }
+                    KeyCode::Char('q') => {
+                        end_tx.send(true)?;
+                        break;
+                    }
+                    _ => {}
+                }
             }
         }
     }
