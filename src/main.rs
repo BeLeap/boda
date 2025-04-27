@@ -63,33 +63,22 @@ fn main() -> error::BodaResult<()> {
             },
             recv(tick) -> _ => {
                 let now = chrono::Local::now();
-                match command::run(shell.clone(), cli.command.clone()) {
-                    Ok(output) => {
-                        execute!(
-                            w,
-                            style::ResetColor,
-                            terminal::Clear(terminal::ClearType::All),
-                            cursor::Hide,
-                            cursor::MoveTo(0, 0),
-                            style::Print(now),
-                            cursor::MoveToNextLine(1),
-                            style::Print("--------------".to_string()),
-                            cursor::MoveToNextLine(1),
-                            style::Print(output),
-                        )?;
-                    },
-                    Err(e) => {
-                        let out = format!("error: {}", e);
-                        execute!(
-                            w,
-                            style::ResetColor,
-                            terminal::Clear(terminal::ClearType::All),
-                            cursor::Hide,
-                            cursor::MoveTo(0, 0),
-                            style::Print(out),
-                        )?;
-                    },
+                let output = match command::run(shell.clone(), cli.command.clone()) {
+                    Ok(output) => output,
+                    Err(e) => format!("error: {}", e),
                 };
+                execute!(
+                    w,
+                    style::ResetColor,
+                    terminal::Clear(terminal::ClearType::All),
+                    cursor::Hide,
+                    cursor::MoveTo(0, 0),
+                    style::Print(now),
+                    cursor::MoveToNextLine(1),
+                    style::Print("--------------".to_string()),
+                    cursor::MoveToNextLine(1),
+                    style::Print(output),
+                )?;
             }
         }
     }
