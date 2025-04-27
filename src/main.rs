@@ -15,7 +15,7 @@ fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
 fn main() -> Result<(), error::Error> {
     let ctrl_c_events = match ctrl_channel() {
         Ok(c) => c,
-        Err(_) => todo!(),
+        Err(e) => return Err(error::Error::CtrlC(e)),
     };
     let ticks = tick(Duration::from_secs(1));
 
