@@ -8,12 +8,7 @@ use crossterm::{
     execute, style, terminal,
     tty::IsTty,
 };
-use std::{
-    env, io,
-    process::Command,
-    thread,
-    time::{Duration, SystemTime},
-};
+use std::{env, io, process::Command, thread, time::Duration};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
