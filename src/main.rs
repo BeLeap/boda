@@ -1,11 +1,13 @@
 mod app;
 mod command;
 mod error;
+mod state;
+mod ui;
 
 use clap::Parser;
 use crossbeam_channel::Sender;
 use crossterm::event::{Event, KeyCode, KeyEvent, poll, read};
-use std::{env, time::Duration};
+use std::{env, thread, time::Duration};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -29,6 +31,14 @@ fn main() -> error::BodaResult<()> {
         Ok(s) => s,
         Err(_) => "/bin/sh".to_string(),
     };
+
+    let (state_manager, state_rx) = state::manager::Manager::new();
+    let (ui_manager, action_rx) = ui::manager::Manager::new();
+
+    let handles = [state_manager.run(action_rx), ui_manager.run(state_rx)];
+    for handle in handles {
+        handle.join().expect("unable to join thread");
+    }
 
     color_eyre::install().expect("unable to install color_eyre");
     let terminal = ratatui::init();
