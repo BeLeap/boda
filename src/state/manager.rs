@@ -56,7 +56,10 @@ impl Manager {
                     }
                     recv(command_rx) -> command_recv => {
                         if let Ok(command) = command_recv {
-                            LOGGER.debug(&command)
+                            {
+                                let mut state = self.state.write().unwrap();
+                                state.result = command;
+                            };
                         }
                     }
                 }

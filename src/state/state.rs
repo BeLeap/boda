@@ -4,6 +4,8 @@ pub struct State {
 
     pub interval: f64,
     pub concurrency: u8,
+
+    pub result: String,
 }
 
 impl Default for State {
@@ -13,6 +15,8 @@ impl Default for State {
 
             interval: 0.0,
             concurrency: 0,
+
+            result: "".to_string(),
         }
     }
 }

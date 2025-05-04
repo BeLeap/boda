@@ -38,7 +38,8 @@ impl Manager {
                             break;
                         }
 
-                        terminal.draw(|frame| self.render(frame)).unwrap();
+                        let result = &state.result;
+                        terminal.draw(|frame| self.render(frame, result.to_string())).unwrap();
                         if poll(Duration::from_secs(0)).unwrap() {
                             self.handle_crossterm_events().unwrap()
                         }
@@ -72,8 +73,8 @@ impl Manager {
         }
     }
 
-    fn render(&self, frame: &mut Frame) {
-        frame.render_widget(Paragraph::new("Hello, World!"), frame.area());
+    fn render(&self, frame: &mut Frame, result: String) {
+        frame.render_widget(Paragraph::new(result), frame.area());
     }
 }
 
