@@ -9,8 +9,11 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    #[arg(short = 'n', long)]
-    interval: Option<f64>,
+    #[arg(short = 'n', long, default_value_t = 1.0)]
+    interval: f64,
+
+    #[arg(short, long, default_value_t = 1)]
+    concurrency: u8,
 
     #[arg(last = true)]
     command: Vec<String>,
@@ -19,12 +22,7 @@ struct Cli {
 fn main() -> error::BodaResult<()> {
     let cli = Cli::parse();
 
-    let interval = match cli.interval {
-        Some(i) => i,
-        None => 1.0,
-    };
-
-    let state_manager = state::manager::Manager::new(interval);
+    let state_manager = state::manager::Manager::new(cli.interval, cli.concurrency);
     let (command_manger, command_rx) = command::manager::Manager::new(cli.command);
     let (ui_manager, action_rx) = ui::manager::Manager::new();
 

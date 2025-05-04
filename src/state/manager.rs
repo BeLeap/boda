@@ -15,9 +15,11 @@ pub struct Manager {
 }
 
 impl Manager {
-    pub fn new(initial_tick: f64) -> Manager {
+    pub fn new(interval: f64, concurrency: u8) -> Manager {
         let mut state = state::State::default();
-        state.tick = initial_tick;
+
+        state.interval = interval;
+        state.concurrency = concurrency;
 
         Manager {
             state: Arc::new(RwLock::new(state)),
