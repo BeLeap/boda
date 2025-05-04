@@ -40,7 +40,30 @@ impl Manager {
         thread::spawn(move || {
             let ticker = tick(Duration::from_millis(100));
             let mut prev_tick: Instant = Instant::now();
-            let running_cnt = Arc::new(RwLock::new(0u8));
+            let running_cnt = Arc::new(RwLock::new(1u8));
+
+            let run = || {
+                LOGGER.debug("run!");
+                let command = self.command.clone();
+                let shell = self.shell.clone();
+                let command_tx = self.command_tx.clone();
+                let running_cnt = running_cnt.clone();
+
+                thread::spawn(move || {
+                    let command = command.join(" ");
+                    let output = Command::new(shell).arg("-c").arg(command).output().unwrap();
+
+                    let result = String::from_utf8_lossy(&output.stdout).to_string();
+
+                    command_tx.send(result).unwrap();
+                    LOGGER.debug("run completed!");
+                    {
+                        let mut running_cnt = running_cnt.write().unwrap();
+                        *running_cnt -= 1;
+                    }
+                });
+            };
+            run();
 
             loop {
                 select! {
@@ -78,30 +101,7 @@ impl Manager {
                                     LOGGER.debug("acquired running_cnt write lock");
                                     *running_cnt += 1;
                                 }
-
-                                let command = self.command.clone();
-                                let shell = self.shell.clone();
-                                let command_tx = self.command_tx.clone();
-                                let running_cnt = running_cnt.clone();
-
-                                LOGGER.debug("run!");
-                                thread::spawn(move || {
-                                    let command = command.join(" ");
-                                    let output = Command::new(shell)
-                                        .arg("-c")
-                                        .arg(command)
-                                        .output()
-                                        .unwrap();
-
-                                    let result = String::from_utf8_lossy(&output.stdout).to_string();
-
-                                    command_tx.send(result).unwrap();
-                                    LOGGER.debug("run completed!");
-                                    {
-                                        let mut running_cnt = running_cnt.write().unwrap();
-                                        *running_cnt -= 1;
-                                    }
-                                });
+                                run();
                             }
                         }
                     }
