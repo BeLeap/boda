@@ -41,12 +41,6 @@ fn main() -> error::BodaResult<()> {
     }
     Ok(())
 
-    // color_eyre::install().expect("unable to install color_eyre");
-    // let terminal = ratatui::init();
-    // let result = app::App::new().run(terminal);
-    // ratatui::restore();
-    // result
-
     // let stdin = io::stdin();
     // if !stdin.is_tty() {
     //     return Err(error::BodaError::Custom(
