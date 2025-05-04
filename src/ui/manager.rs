@@ -2,7 +2,7 @@ use std::{thread, time::Duration};
 
 use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use ratatui::DefaultTerminal;
+use ratatui::{DefaultTerminal, Frame, widgets::Paragraph};
 
 use crate::{error, state};
 
@@ -25,7 +25,7 @@ impl Manager {
         state_rx: crossbeam_channel::Receiver<state::state::State>,
     ) -> thread::JoinHandle<()> {
         thread::spawn(move || {
-            let terminal = setup_terminal();
+            let mut terminal = setup_terminal();
 
             let tick = tick(Duration::from_millis(10));
 
@@ -40,6 +40,7 @@ impl Manager {
                         }
                     }
                     recv(tick) -> _ => {
+                        terminal.draw(|frame| self.render(frame));
                         self.handle_crossterm_events().expect("unable handle crossterm event");
                     }
                 }
@@ -66,6 +67,10 @@ impl Manager {
             // Add other key handlers here.
             _ => {}
         }
+    }
+
+    fn render(&self, frame: &mut Frame) {
+        frame.render_widget(Paragraph::new("Hello, World!"), frame.area());
     }
 }
 
