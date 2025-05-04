@@ -92,9 +92,12 @@ impl Manager {
         let chunks =
             Layout::vertical([Constraint::Length(3), Constraint::Percentage(100)]).split(area);
 
-        let heading_chunks =
-            Layout::horizontal([Constraint::Percentage(10), Constraint::Percentage(90)])
-                .split(chunks[0]);
+        let heading_chunks = Layout::horizontal([
+            Constraint::Percentage(10),
+            Constraint::Percentage(70),
+            Constraint::Percentage(20),
+        ])
+        .split(chunks[0]);
 
         frame.render_widget(
             Paragraph::new(format!("{}", state.interval)).block(
@@ -113,6 +116,15 @@ impl Manager {
                     .title_style(Style::new().gray()),
             ),
             heading_chunks[1],
+        );
+        frame.render_widget(
+            Paragraph::new(format!("{}", state.result.timestamp)).block(
+                Block::bordered()
+                    .border_style(Style::new().gray())
+                    .title("Timestamp")
+                    .title_style(Style::new().gray()),
+            ),
+            heading_chunks[2],
         );
 
         frame.render_widget(
