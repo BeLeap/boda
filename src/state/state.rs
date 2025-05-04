@@ -25,14 +25,14 @@ impl Default for State {
 
 #[derive(Debug, Clone)]
 pub struct CommandResult {
-    pub timestamp: Instant,
+    pub timestamp: chrono::DateTime<chrono::Local>,
     pub stdout: String,
 }
 
 impl Default for CommandResult {
     fn default() -> Self {
         CommandResult {
-            timestamp: Instant::now(),
+            timestamp: chrono::Local::now(),
             stdout: "".to_string(),
         }
     }

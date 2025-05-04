@@ -19,5 +19,4 @@ clap = { version = "4.5.37", features = ["derive"] }
 chrono = "0.4.40"
 ratatui = "0.29.0"
 color-eyre = "0.6.3"
-time = "0.3.41"
 bus = "2.4.1"

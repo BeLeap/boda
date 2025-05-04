@@ -45,7 +45,7 @@ impl Manager {
             let mut prev_tick: Instant = Instant::now();
             let running_cnt = Arc::new(RwLock::new(1u8));
 
-            let run = |t: Instant| {
+            let run = || {
                 LOGGER.debug("run!");
                 let command = self.command.clone();
                 let shell = self.shell.clone();
@@ -60,7 +60,7 @@ impl Manager {
 
                     command_tx
                         .send(CommandResult {
-                            timestamp: t,
+                            timestamp: chrono::Local::now(),
                             stdout: result,
                         })
                         .unwrap();
@@ -71,7 +71,7 @@ impl Manager {
                     }
                 });
             };
-            run(prev_tick);
+            run();
 
             loop {
                 select! {
@@ -108,7 +108,7 @@ impl Manager {
                                     LOGGER.debug("acquired running_cnt write lock");
                                     *running_cnt += 1;
                                 }
-                                run(t);
+                                run();
                                 prev_tick = t;
                             }
                         }

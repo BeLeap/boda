@@ -26,7 +26,7 @@ impl Logger {
 
     pub fn log<T: std::fmt::Display>(&self, level: Level, line: T) {
         let mut file = self.file.lock().unwrap();
-        let now = time::UtcDateTime::now();
+        let now = chrono::Local::now();
 
         writeln!(file, "[{}] level={} {}", now, level, line).expect("unable to write log");
     }

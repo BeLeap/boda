@@ -8,7 +8,11 @@ use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
 use ratatui::{DefaultTerminal, Frame, widgets::Paragraph};
 
-use crate::{error, state, util::log::LOGGER};
+use crate::{
+    error,
+    state::{self, state::CommandResult},
+    util::log::LOGGER,
+};
 
 #[derive(Debug)]
 pub struct Manager {
@@ -39,7 +43,7 @@ impl Manager {
                         }
 
                         let result = &state.result;
-                        terminal.draw(|frame| self.render(frame, result.to_string())).unwrap();
+                        terminal.draw(|frame| self.render(frame, result)).unwrap();
                         if poll(Duration::from_secs(0)).unwrap() {
                             self.handle_crossterm_events().unwrap()
                         }
@@ -73,8 +77,8 @@ impl Manager {
         }
     }
 
-    fn render(&self, frame: &mut Frame, result: String) {
-        frame.render_widget(Paragraph::new(result), frame.area());
+    fn render(&self, frame: &mut Frame, result: &CommandResult) {
+        frame.render_widget(Paragraph::new(result.timestamp.to_string()), frame.area());
     }
 }
 
