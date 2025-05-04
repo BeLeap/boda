@@ -1,7 +1,6 @@
 mod command;
 mod error;
 mod state;
-mod termination;
 mod ui;
 mod util;
 

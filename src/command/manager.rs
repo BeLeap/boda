@@ -46,8 +46,11 @@ impl Manager {
                     if let Ok(t) = ticker_recv {
                         let tick_diff = t - prev_tick;
 
-                        let state = state.read().unwrap();
-                        if tick_diff.as_millis() > (state.tick * 1000.0) as u128 {
+                        let tick = {
+                            let state = state.read().unwrap();
+                            state.tick
+                        };
+                        if tick_diff.as_millis() > (tick * 1000.0) as u128 {
                             let result = self.execute();
                             if let Ok(_) = self.command_tx.send(result) {
                                 prev_tick = t;
