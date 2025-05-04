@@ -1,3 +1,5 @@
+pub mod manager;
+
 use std::process::Command;
 
 use crate::error;

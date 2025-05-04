@@ -1,4 +1,8 @@
-use std::{thread, time::Duration};
+use std::{
+    sync::{Arc, RwLock},
+    thread,
+    time::Duration,
+};
 
 use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
@@ -20,25 +24,20 @@ impl Manager {
 }
 
 impl Manager {
-    pub fn run(
-        self,
-        state_rx: crossbeam_channel::Receiver<state::state::State>,
-    ) -> thread::JoinHandle<()> {
+    pub fn run(self, state: Arc<RwLock<state::state::State>>) -> thread::JoinHandle<()> {
         thread::spawn(move || {
             let mut terminal = setup_terminal();
-            let tick = tick(Duration::from_millis(100));
+            let ticker = tick(Duration::from_millis(100));
 
             loop {
                 select! {
-                    recv(state_rx) -> state_recv => {
-                        if let Ok(state) = state_recv {
-                            if !state.running {
-                                cleanup_terminal();
-                                break;
-                            }
+                    recv(ticker) -> _ => {
+                        let state = state.read().unwrap();
+                        if !state.running {
+                            cleanup_terminal();
+                            break;
                         }
-                    }
-                    recv(tick) -> _ => {
+
                         terminal.draw(|frame| self.render(frame)).unwrap();
                         if poll(Duration::from_secs(0)).unwrap() {
                             self.handle_crossterm_events().unwrap()

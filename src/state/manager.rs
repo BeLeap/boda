@@ -1,6 +1,9 @@
-use std::thread;
+use std::{
+    sync::{Arc, RwLock},
+    thread,
+};
 
-use crossbeam_channel::{select, unbounded};
+use crossbeam_channel::select;
 
 use crate::util::log::LOGGER;
 
@@ -8,23 +11,25 @@ use super::{action, state};
 
 #[derive(Debug)]
 pub struct Manager {
-    state_tx: crossbeam_channel::Sender<state::State>,
+    pub state: Arc<RwLock<state::State>>,
 }
 
 impl Manager {
-    pub fn new() -> (Manager, crossbeam_channel::Receiver<state::State>) {
-        let (tx, rx) = unbounded::<state::State>();
+    pub fn new(initial_tick: f64) -> Manager {
+        let mut state = state::State::default();
+        state.tick = initial_tick;
 
-        (Manager { state_tx: tx }, rx)
+        Manager {
+            state: Arc::new(RwLock::new(state)),
+        }
     }
 
     pub fn run(
         self,
         action_rx: crossbeam_channel::Receiver<action::Action>,
+        command_rx: crossbeam_channel::Receiver<String>,
     ) -> thread::JoinHandle<()> {
         thread::spawn(move || {
-            let mut state = state::State::default();
-
             loop {
                 select! {
                     recv(action_rx) -> action_recv => {
@@ -32,20 +37,22 @@ impl Manager {
                             match action {
                                 action::Action::Quit => {
                                     LOGGER.log("received quit");
+                                    let mut state = self.state.write().unwrap();
+
                                     state.running = false;
                                 },
                             }
 
-                            LOGGER.log("sending state");
-
-                            if let Err(_) = self.state_tx.send(state.clone()) {
-                                LOGGER.log("unable to send state");
-                            }
-
+                            let state = self.state.read().unwrap();
                             if state.running == false {
                                 LOGGER.log("stopping state manager..");
                                 break;
                             }
+                        }
+                    }
+                    recv(command_rx) -> command_recv => {
+                        if let Ok(command) = command_recv {
+                            LOGGER.log(&command)
                         }
                     }
                 }

@@ -1,11 +1,11 @@
 mod command;
 mod error;
 mod state;
+mod termination;
 mod ui;
 mod util;
 
 use clap::Parser;
-use std::env;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -25,15 +25,15 @@ fn main() -> error::BodaResult<()> {
         None => 1.0,
     };
 
-    let shell = match env::var("SHELL") {
-        Ok(s) => s,
-        Err(_) => "/bin/sh".to_string(),
-    };
-
-    let (state_manager, state_rx) = state::manager::Manager::new();
+    let state_manager = state::manager::Manager::new(interval);
+    let (command_manger, command_rx) = command::manager::Manager::new(cli.command);
     let (ui_manager, action_rx) = ui::manager::Manager::new();
 
-    let handles = [ui_manager.run(state_rx), state_manager.run(action_rx)];
+    let handles = [
+        command_manger.run(state_manager.state.clone()),
+        ui_manager.run(state_manager.state.clone()),
+        state_manager.run(action_rx, command_rx),
+    ];
     for handle in handles {
         handle.join().expect("unable to join thread");
     }
