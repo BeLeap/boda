@@ -45,6 +45,7 @@ impl Manager {
                 recv(ticker) -> ticker_recv => {
                     if let Ok(t) = ticker_recv {
                         let tick_diff = t - prev_tick;
+                        LOGGER.log(format!("{:#?}", tick_diff));
 
                         let tick = {
                             let state = state.read().unwrap();

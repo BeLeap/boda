@@ -24,7 +24,7 @@ impl Logger {
         };
     }
 
-    pub fn log(&self, line: &str) {
+    pub fn log<T: std::fmt::Display>(&self, line: T) {
         let mut file = self.file.lock().unwrap();
         let now = time::UtcDateTime::now();
 
