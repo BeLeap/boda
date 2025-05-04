@@ -53,6 +53,7 @@ impl Manager {
                 let running_cnt = running_cnt.clone();
 
                 thread::spawn(move || {
+                    let now = chrono::Local::now();
                     let command = command.join(" ");
                     let output = Command::new(shell).arg("-c").arg(command).output().unwrap();
 
@@ -60,7 +61,7 @@ impl Manager {
 
                     command_tx
                         .send(CommandResult {
-                            timestamp: chrono::Local::now(),
+                            timestamp: now,
                             stdout: result,
                         })
                         .unwrap();
