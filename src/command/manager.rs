@@ -41,20 +41,23 @@ impl Manager {
             let ticker = tick(Duration::from_millis(100));
             let mut prev_tick: Instant = Instant::now();
 
-            select! {
-                recv(ticker) -> ticker_recv => {
-                    if let Ok(t) = ticker_recv {
-                        let tick_diff = t - prev_tick;
-                        LOGGER.log(format!("{:#?}", tick_diff));
+            loop {
+                select! {
+                    recv(ticker) -> ticker_recv => {
+                        if let Ok(t) = ticker_recv {
+                            let tick_diff = t - prev_tick;
+                            LOGGER.log(format!("{:#?}", tick_diff));
 
-                        let tick = {
-                            let state = state.read().unwrap();
-                            state.tick
-                        };
-                        if tick_diff.as_millis() > (tick * 1000.0) as u128 {
-                            let result = self.execute();
-                            if let Ok(_) = self.command_tx.send(result) {
-                                prev_tick = t;
+                            let tick = {
+                                let state = state.read().unwrap();
+                                state.tick
+                            };
+                            LOGGER.log(format!("{:#?}", tick));
+                            if tick_diff.as_millis() > (tick * 1000.0) as u128 {
+                                let result = self.execute();
+                                if let Ok(_) = self.command_tx.send(result) {
+                                    prev_tick = t;
+                                }
                             }
                         }
                     }
