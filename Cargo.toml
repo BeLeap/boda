@@ -1,6 +1,6 @@
 [package]
 name = "boda"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 repository = "https://git.sr.ht/~beleap/boda"
 description = "opinionated alternative watch"
