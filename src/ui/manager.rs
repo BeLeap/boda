@@ -9,7 +9,8 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifier
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout},
-    widgets::Paragraph,
+    style::{Style, Stylize},
+    widgets::{Block, Paragraph},
 };
 
 use crate::{error, state, util::log::LOGGER};
@@ -89,11 +90,29 @@ impl Manager {
     fn render(&mut self, frame: &mut Frame, state: &state::state::State) {
         let area = frame.area();
         let chunks =
-            Layout::vertical([Constraint::Length(1), Constraint::Percentage(100)]).split(area);
+            Layout::vertical([Constraint::Length(3), Constraint::Percentage(100)]).split(area);
+
+        let heading_chunks =
+            Layout::horizontal([Constraint::Percentage(10), Constraint::Percentage(90)])
+                .split(chunks[0]);
 
         frame.render_widget(
-            Paragraph::new(state.result.timestamp.to_string()),
-            chunks[0],
+            Paragraph::new(format!("{}", state.interval)).block(
+                Block::bordered()
+                    .border_style(Style::new().gray())
+                    .title("Every")
+                    .title_style(Style::new().gray()),
+            ),
+            heading_chunks[0],
+        );
+        frame.render_widget(
+            Paragraph::new(state.command.join(" ")).block(
+                Block::bordered()
+                    .border_style(Style::new().gray())
+                    .title("Command")
+                    .title_style(Style::new().gray()),
+            ),
+            heading_chunks[1],
         );
 
         frame.render_widget(

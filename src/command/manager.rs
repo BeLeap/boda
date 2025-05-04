@@ -17,11 +17,10 @@ pub struct Manager {
     command_tx: crossbeam_channel::Sender<CommandResult>,
 
     shell: String,
-    command: Vec<String>,
 }
 
 impl Manager {
-    pub fn new(command: Vec<String>) -> (Manager, crossbeam_channel::Receiver<CommandResult>) {
+    pub fn new() -> (Manager, crossbeam_channel::Receiver<CommandResult>) {
         let shell = match env::var("SHELL") {
             Ok(s) => s,
             Err(_) => "/bin/sh".to_string(),
@@ -33,7 +32,6 @@ impl Manager {
                 command_tx: tx,
 
                 shell,
-                command,
             },
             rx,
         )
@@ -45,9 +43,8 @@ impl Manager {
             let mut prev_tick: Instant = Instant::now();
             let running_cnt = Arc::new(RwLock::new(1u8));
 
-            let run = || {
+            let run = |command: Vec<String>| {
                 LOGGER.debug("run!");
-                let command = self.command.clone();
                 let shell = self.shell.clone();
                 let command_tx = self.command_tx.clone();
                 let running_cnt = running_cnt.clone();
@@ -72,7 +69,11 @@ impl Manager {
                     }
                 });
             };
-            run();
+            let command = {
+                let state = state.read().unwrap();
+                state.command.clone()
+            };
+            run(command);
 
             loop {
                 select! {
@@ -109,7 +110,11 @@ impl Manager {
                                     LOGGER.debug("acquired running_cnt write lock");
                                     *running_cnt += 1;
                                 }
-                                run();
+                                let command = {
+                                    let state = state.read().unwrap();
+                                    state.command.clone()
+                                };
+                                run(command);
                                 prev_tick = t;
                             }
                         }

@@ -22,8 +22,8 @@ struct Cli {
 fn main() -> error::BodaResult<()> {
     let cli = Cli::parse();
 
-    let state_manager = state::manager::Manager::new(cli.interval, cli.concurrency);
-    let (command_manger, command_rx) = command::manager::Manager::new(cli.command);
+    let state_manager = state::manager::Manager::new(cli);
+    let (command_manger, command_rx) = command::manager::Manager::new();
     let (ui_manager, action_rx) = ui::manager::Manager::new();
 
     let handles = [

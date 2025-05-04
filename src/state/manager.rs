@@ -5,7 +5,7 @@ use std::{
 
 use crossbeam_channel::select;
 
-use crate::util::log::LOGGER;
+use crate::{Cli, util::log::LOGGER};
 
 use super::{action, state};
 
@@ -15,11 +15,12 @@ pub struct Manager {
 }
 
 impl Manager {
-    pub fn new(interval: f64, concurrency: u8) -> Manager {
+    pub fn new(cli: Cli) -> Manager {
         let mut state = state::State::default();
 
-        state.interval = interval;
-        state.concurrency = concurrency;
+        state.interval = cli.interval;
+        state.concurrency = cli.concurrency;
+        state.command = cli.command;
 
         Manager {
             state: Arc::new(RwLock::new(state)),

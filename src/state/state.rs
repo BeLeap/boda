@@ -2,6 +2,7 @@
 pub struct State {
     pub running: bool,
 
+    pub command: Vec<String>,
     pub interval: f64,
     pub concurrency: u8,
 
@@ -15,6 +16,7 @@ impl Default for State {
         State {
             running: true,
 
+            command: Vec::new(),
             interval: 0.0,
             concurrency: 0,
 
