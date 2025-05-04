@@ -320,7 +320,6 @@ dependencies = [
  "crossterm_winapi",
  "derive_more",
  "document-features",
- "futures-core",
  "mio",
  "parking_lot",
  "rustix 1.0.5",
@@ -446,12 +445,6 @@ name = "foldhash"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
-
-[[package]]
-name = "futures-core"
-version = "0.3.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05f29059c0c2090612e8d742178b0580d2dc940c837851ad723096f87af6663e"
 
 [[package]]
 name = "gimli"
