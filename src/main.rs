@@ -1,13 +1,10 @@
-mod app;
 mod command;
 mod error;
 mod state;
 mod ui;
 
 use clap::Parser;
-use crossbeam_channel::Sender;
-use crossterm::event::{Event, KeyCode, KeyEvent, poll, read};
-use std::{env, thread, time::Duration};
+use std::env;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -112,32 +109,4 @@ fn main() -> error::BodaResult<()> {
     // };
 
     // Ok(())
-}
-
-fn handle_keys(end_tx: Sender<bool>) -> error::BodaResult<()> {
-    loop {
-        if poll(Duration::from_secs(1))? {
-            if let Event::Key(KeyEvent {
-                code,
-                modifiers: _,
-                kind: _,
-                state: _,
-            }) = read()?
-            {
-                match code {
-                    KeyCode::Esc => {
-                        end_tx.send(true)?;
-                        break;
-                    }
-                    KeyCode::Char('q') => {
-                        end_tx.send(true)?;
-                        break;
-                    }
-                    _ => {}
-                }
-            }
-        }
-    }
-
-    Ok(())
 }
