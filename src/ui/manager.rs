@@ -8,7 +8,7 @@ use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
 use ratatui::{
     DefaultTerminal, Frame,
-    layout::{Constraint, Layout},
+    layout::{Constraint, Layout, Margin},
     style::{Style, Stylize},
     widgets::{Block, Paragraph},
 };
@@ -118,7 +118,10 @@ impl Manager {
         frame.render_widget(
             Paragraph::new(state.result.stdout.clone().split("\r").collect::<String>())
                 .scroll(((state.vertical_scroll as u16), 0)),
-            chunks[1],
+            chunks[1].inner(Margin {
+                horizontal: 1,
+                vertical: 0,
+            }),
         );
     }
 }
