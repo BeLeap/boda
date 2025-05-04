@@ -29,7 +29,7 @@ impl Manager {
     pub fn run(
         self,
         action_rx: crossbeam_channel::Receiver<action::Action>,
-        command_rx: crossbeam_channel::Receiver<String>,
+        command_rx: crossbeam_channel::Receiver<state::CommandResult>,
     ) -> thread::JoinHandle<()> {
         thread::spawn(move || {
             loop {

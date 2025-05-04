@@ -8,23 +8,26 @@ use std::{
 
 use crossbeam_channel::{select, tick, unbounded};
 
-use crate::{state::state, util::log::LOGGER};
+use crate::{
+    state::state::{self, CommandResult},
+    util::log::LOGGER,
+};
 
 pub struct Manager {
-    command_tx: crossbeam_channel::Sender<String>,
+    command_tx: crossbeam_channel::Sender<CommandResult>,
 
     shell: String,
     command: Vec<String>,
 }
 
 impl Manager {
-    pub fn new(command: Vec<String>) -> (Manager, crossbeam_channel::Receiver<String>) {
+    pub fn new(command: Vec<String>) -> (Manager, crossbeam_channel::Receiver<CommandResult>) {
         let shell = match env::var("SHELL") {
             Ok(s) => s,
             Err(_) => "/bin/sh".to_string(),
         };
 
-        let (tx, rx) = unbounded::<String>();
+        let (tx, rx) = unbounded::<CommandResult>();
         (
             Manager {
                 command_tx: tx,
@@ -42,7 +45,7 @@ impl Manager {
             let mut prev_tick: Instant = Instant::now();
             let running_cnt = Arc::new(RwLock::new(1u8));
 
-            let run = || {
+            let run = |t: Instant| {
                 LOGGER.debug("run!");
                 let command = self.command.clone();
                 let shell = self.shell.clone();
@@ -55,7 +58,12 @@ impl Manager {
 
                     let result = String::from_utf8_lossy(&output.stdout).to_string();
 
-                    command_tx.send(result).unwrap();
+                    command_tx
+                        .send(CommandResult {
+                            timestamp: t,
+                            stdout: result,
+                        })
+                        .unwrap();
                     LOGGER.debug("run completed!");
                     {
                         let mut running_cnt = running_cnt.write().unwrap();
@@ -63,7 +71,7 @@ impl Manager {
                     }
                 });
             };
-            run();
+            run(prev_tick);
 
             loop {
                 select! {
@@ -94,14 +102,14 @@ impl Manager {
                             if tick_diff.as_millis() > (interval * 1000.0) as u128 && now_running < concurrency {
                                 LOGGER.debug("prepare run");
 
-                                prev_tick = t;
                                 {
                                     LOGGER.debug("acquiring running_cnt write lock");
                                     let mut running_cnt = running_cnt.write().unwrap();
                                     LOGGER.debug("acquired running_cnt write lock");
                                     *running_cnt += 1;
                                 }
-                                run();
+                                run(t);
+                                prev_tick = t;
                             }
                         }
                     }
