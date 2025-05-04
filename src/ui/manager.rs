@@ -1,10 +1,10 @@
 use std::{thread, time::Duration};
 
 use crossbeam_channel::{select, tick, unbounded};
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
 use ratatui::{DefaultTerminal, Frame, widgets::Paragraph};
 
-use crate::{error, state};
+use crate::{error, state, util::log::LOGGER};
 
 #[derive(Debug)]
 pub struct Manager {
@@ -26,8 +26,7 @@ impl Manager {
     ) -> thread::JoinHandle<()> {
         thread::spawn(move || {
             let mut terminal = setup_terminal();
-
-            let tick = tick(Duration::from_millis(10));
+            let tick = tick(Duration::from_millis(100));
 
             loop {
                 select! {
@@ -40,8 +39,10 @@ impl Manager {
                         }
                     }
                     recv(tick) -> _ => {
-                        terminal.draw(|frame| self.render(frame)).expect("unable to draw");
-                        self.handle_crossterm_events().expect("unable handle crossterm event");
+                        terminal.draw(|frame| self.render(frame)).unwrap();
+                        if poll(Duration::from_secs(0)).unwrap() {
+                            self.handle_crossterm_events().unwrap()
+                        }
                     }
                 }
             }
@@ -57,12 +58,15 @@ impl Manager {
     }
 
     fn on_key_event(&self, key: KeyEvent) {
+        LOGGER.log("key event");
         match (key.modifiers, key.code) {
             (_, KeyCode::Esc | KeyCode::Char('q'))
             | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => {
-                self.action_tx
-                    .send(state::action::Action::Quit)
-                    .expect("unable to send quit");
+                LOGGER.log("sending quit");
+                if let Err(_) = self.action_tx.send(state::action::Action::Quit) {
+                    LOGGER.log("error on send")
+                }
+                LOGGER.log("sent quit");
             }
             // Add other key handlers here.
             _ => {}

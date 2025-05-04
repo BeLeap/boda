@@ -2,6 +2,7 @@ mod command;
 mod error;
 mod state;
 mod ui;
+mod util;
 
 use clap::Parser;
 use std::env;
@@ -32,7 +33,7 @@ fn main() -> error::BodaResult<()> {
     let (state_manager, state_rx) = state::manager::Manager::new();
     let (ui_manager, action_rx) = ui::manager::Manager::new();
 
-    let handles = [state_manager.run(action_rx), ui_manager.run(state_rx)];
+    let handles = [ui_manager.run(state_rx), state_manager.run(action_rx)];
     for handle in handles {
         handle.join().expect("unable to join thread");
     }

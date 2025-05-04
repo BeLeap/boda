@@ -2,6 +2,8 @@ use std::thread;
 
 use crossbeam_channel::{select, unbounded};
 
+use crate::util::log::LOGGER;
+
 use super::{action, state};
 
 #[derive(Debug)]
@@ -29,13 +31,19 @@ impl Manager {
                         if let Ok(action) = action_recv {
                             match action {
                                 action::Action::Quit => {
+                                    LOGGER.log("received quit");
                                     state.running = false;
                                 },
                             }
 
-                            self.state_tx.send(state.clone()).expect("failed to send state");
+                            LOGGER.log("sending state");
+
+                            if let Err(_) = self.state_tx.send(state.clone()) {
+                                LOGGER.log("unable to send state");
+                            }
 
                             if state.running == false {
+                                LOGGER.log("stopping state manager..");
                                 break;
                             }
                         }
