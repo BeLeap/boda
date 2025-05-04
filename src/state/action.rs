@@ -1,2 +1,4 @@
 #[derive(Debug)]
-pub enum Action {}
+pub enum Action {
+    Quit,
+}

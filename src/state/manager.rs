@@ -21,9 +21,25 @@ impl Manager {
         action_rx: crossbeam_channel::Receiver<action::Action>,
     ) -> thread::JoinHandle<()> {
         thread::spawn(move || {
+            let mut state = state::State::default();
+
             loop {
                 select! {
-                    recv(action_rx) -> _ => {}
+                    recv(action_rx) -> action_recv => {
+                        if let Ok(action) = action_recv {
+                            match action {
+                                action::Action::Quit => {
+                                    state.running = false;
+                                },
+                            }
+
+                            self.state_tx.send(state.clone()).expect("failed to send state");
+
+                            if state.running == false {
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         })
