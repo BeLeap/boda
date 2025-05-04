@@ -6,13 +6,13 @@ use std::{
 
 use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
-use ratatui::{DefaultTerminal, Frame, widgets::Paragraph};
-
-use crate::{
-    error,
-    state::{self, state::CommandResult},
-    util::log::LOGGER,
+use ratatui::{
+    DefaultTerminal, Frame,
+    layout::{Constraint, Layout},
+    widgets::Paragraph,
 };
+
+use crate::{error, state, util::log::LOGGER};
 
 #[derive(Debug)]
 pub struct Manager {
@@ -28,7 +28,7 @@ impl Manager {
 }
 
 impl Manager {
-    pub fn run(self, state: Arc<RwLock<state::state::State>>) -> thread::JoinHandle<()> {
+    pub fn run(mut self, state: Arc<RwLock<state::state::State>>) -> thread::JoinHandle<()> {
         thread::spawn(move || {
             let mut terminal = setup_terminal();
             let ticker = tick(Duration::from_millis(100));
@@ -42,8 +42,7 @@ impl Manager {
                             break;
                         }
 
-                        let result = &state.result;
-                        terminal.draw(|frame| self.render(frame, result)).unwrap();
+                        terminal.draw(|frame| self.render(frame, &state)).unwrap();
                         if poll(Duration::from_secs(0)).unwrap() {
                             self.handle_crossterm_events().unwrap()
                         }
@@ -72,13 +71,36 @@ impl Manager {
                 }
                 LOGGER.debug("sent quit");
             }
+            (_, KeyCode::Char('j')) => {
+                self.action_tx
+                    .send(state::action::Action::ScrollDown)
+                    .unwrap();
+            }
+            (_, KeyCode::Char('k')) => {
+                self.action_tx
+                    .send(state::action::Action::ScrollUp)
+                    .unwrap();
+            }
             // Add other key handlers here.
             _ => {}
         }
     }
 
-    fn render(&self, frame: &mut Frame, result: &CommandResult) {
-        frame.render_widget(Paragraph::new(result.timestamp.to_string()), frame.area());
+    fn render(&mut self, frame: &mut Frame, state: &state::state::State) {
+        let area = frame.area();
+        let chunks =
+            Layout::vertical([Constraint::Length(1), Constraint::Percentage(100)]).split(area);
+
+        frame.render_widget(
+            Paragraph::new(state.result.timestamp.to_string()),
+            chunks[0],
+        );
+
+        frame.render_widget(
+            Paragraph::new(state.result.stdout.clone().split("\r").collect::<String>())
+                .scroll(((state.vertical_scroll as u16), 0)),
+            chunks[1],
+        );
     }
 }
 

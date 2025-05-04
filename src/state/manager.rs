@@ -44,6 +44,14 @@ impl Manager {
 
                                         state.running = false;
                                     },
+                                    action::Action::ScrollUp => {
+                                        if state.vertical_scroll > 0 {
+                                            state.vertical_scroll -= 1;
+                                        }
+                                    },
+                                    action::Action::ScrollDown => {
+                                        state.vertical_scroll += 1;
+                                    },
                                 }
                             }
 

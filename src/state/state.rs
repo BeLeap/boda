@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 #[derive(Debug, Clone)]
 pub struct State {
     pub running: bool,
@@ -8,6 +6,8 @@ pub struct State {
     pub concurrency: u8,
 
     pub result: CommandResult,
+
+    pub vertical_scroll: usize,
 }
 
 impl Default for State {
@@ -19,6 +19,8 @@ impl Default for State {
             concurrency: 0,
 
             result: CommandResult::default(),
+
+            vertical_scroll: 0,
         }
     }
 }
