@@ -40,7 +40,7 @@ impl Manager {
                         }
                     }
                     recv(tick) -> _ => {
-                        terminal.draw(|frame| self.render(frame));
+                        terminal.draw(|frame| self.render(frame)).expect("unable to draw");
                         self.handle_crossterm_events().expect("unable handle crossterm event");
                     }
                 }
