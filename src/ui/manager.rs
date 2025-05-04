@@ -57,15 +57,15 @@ impl Manager {
     }
 
     fn on_key_event(&self, key: KeyEvent) {
-        LOGGER.log("key event");
+        LOGGER.debug("key event");
         match (key.modifiers, key.code) {
             (_, KeyCode::Esc | KeyCode::Char('q'))
             | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => {
-                LOGGER.log("sending quit");
+                LOGGER.debug("sending quit");
                 if let Err(_) = self.action_tx.send(state::action::Action::Quit) {
-                    LOGGER.log("error on send")
+                    LOGGER.error("error on send")
                 }
-                LOGGER.log("sent quit");
+                LOGGER.debug("sent quit");
             }
             // Add other key handlers here.
             _ => {}

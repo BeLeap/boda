@@ -24,10 +24,48 @@ impl Logger {
         };
     }
 
-    pub fn log<T: std::fmt::Display>(&self, line: T) {
+    pub fn log<T: std::fmt::Display>(&self, level: Level, line: T) {
         let mut file = self.file.lock().unwrap();
         let now = time::UtcDateTime::now();
 
-        writeln!(file, "[{}] {}", now, line).expect("unable to write log");
+        writeln!(file, "[{}] level={} {}", now, level, line).expect("unable to write log");
+    }
+
+    pub fn debug<T: std::fmt::Display>(&self, line: T) {
+        self.log(Level::Debug, line)
+    }
+
+    pub fn info<T: std::fmt::Display>(&self, line: T) {
+        self.log(Level::Info, line)
+    }
+
+    pub fn warn<T: std::fmt::Display>(&self, line: T) {
+        self.log(Level::Warn, line)
+    }
+
+    pub fn error<T: std::fmt::Display>(&self, line: T) {
+        self.log(Level::Error, line)
+    }
+}
+
+pub enum Level {
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
+
+impl std::fmt::Display for Level {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Level::Debug => "DEBUG",
+                Level::Info => "INFO",
+                Level::Warn => "WARN",
+                Level::Error => "ERROR",
+            },
+        )
     }
 }

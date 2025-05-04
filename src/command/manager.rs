@@ -45,14 +45,22 @@ impl Manager {
                 select! {
                     recv(ticker) -> ticker_recv => {
                         if let Ok(t) = ticker_recv {
+                            {
+                                let state = state.read().unwrap();
+                                if !state.running {
+                                    break;
+                                }
+                            }
+
+
                             let tick_diff = t - prev_tick;
-                            LOGGER.log(format!("{:#?}", tick_diff));
+                            LOGGER.debug(format!("{:#?}", tick_diff));
 
                             let tick = {
                                 let state = state.read().unwrap();
                                 state.tick
                             };
-                            LOGGER.log(format!("{:#?}", tick));
+                            LOGGER.debug(format!("{:#?}", tick));
                             if tick_diff.as_millis() > (tick * 1000.0) as u128 {
                                 let result = self.execute();
                                 if let Ok(_) = self.command_tx.send(result) {

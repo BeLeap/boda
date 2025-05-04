@@ -38,7 +38,7 @@ impl Manager {
                                 let mut state = self.state.write().unwrap();
                                 match action {
                                     action::Action::Quit => {
-                                        LOGGER.log("received quit");
+                                        LOGGER.debug("received quit");
 
                                         state.running = false;
                                     },
@@ -47,14 +47,14 @@ impl Manager {
 
                             let state = self.state.read().unwrap();
                             if state.running == false {
-                                LOGGER.log("stopping state manager..");
+                                LOGGER.info("stopping state manager..");
                                 break;
                             }
                         }
                     }
                     recv(command_rx) -> command_recv => {
                         if let Ok(command) = command_recv {
-                            LOGGER.log(&command)
+                            LOGGER.debug(&command)
                         }
                     }
                 }
