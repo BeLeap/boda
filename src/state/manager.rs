@@ -34,13 +34,15 @@ impl Manager {
                 select! {
                     recv(action_rx) -> action_recv => {
                         if let Ok(action) = action_recv {
-                            match action {
-                                action::Action::Quit => {
-                                    LOGGER.log("received quit");
-                                    let mut state = self.state.write().unwrap();
+                            {
+                                let mut state = self.state.write().unwrap();
+                                match action {
+                                    action::Action::Quit => {
+                                        LOGGER.log("received quit");
 
-                                    state.running = false;
-                                },
+                                        state.running = false;
+                                    },
+                                }
                             }
 
                             let state = self.state.read().unwrap();
