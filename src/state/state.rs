@@ -113,7 +113,7 @@ impl Global {
     pub fn last_command_result(&self) -> Option<CommandResult> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = match conn.prepare(
-            "SELECT timestamp, stdout, stderr, status FROM command_result ORDER BY id DESC LIMIT 1",
+            "SELECT timestamp, stdout, stderr, status FROM command_result WHERE status IS NOT NULL ORDER BY id DESC LIMIT 1",
         ) {
             Ok(stmt) => stmt,
             Err(e) => {
