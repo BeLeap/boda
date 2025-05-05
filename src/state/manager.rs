@@ -1,4 +1,5 @@
 use std::{
+    path::PathBuf,
     sync::{Arc, RwLock},
     thread,
 };
@@ -16,8 +17,8 @@ pub struct Manager {
 }
 
 impl Manager {
-    pub fn new(cli: Cli) -> Manager {
-        let state = state::State::new(cli);
+    pub fn new(cli: Cli, filepath: &PathBuf) -> Manager {
+        let state = state::State::new(cli, filepath);
 
         Manager {
             state: Arc::new(RwLock::new(state)),
@@ -76,7 +77,7 @@ impl Manager {
         let mut state = self.state.write().unwrap();
         match command_action {
             action::Command::RunResult(command_result) => {
-                state.global.result = command_result;
+                state.global.append_command_result(command_result);
                 state.command.running_count -= 1;
             }
             action::Command::StartRun(t) => {
