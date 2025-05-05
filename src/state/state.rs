@@ -1,3 +1,5 @@
+use crate::Cli;
+
 #[derive(Debug, Clone)]
 pub struct State {
     pub running: bool,
@@ -11,14 +13,14 @@ pub struct State {
     pub vertical_scroll: usize,
 }
 
-impl Default for State {
-    fn default() -> Self {
+impl State {
+    pub fn new(cli: Cli) -> State {
         State {
             running: true,
 
-            command: Vec::new(),
-            interval: 0.0,
-            concurrency: 0,
+            command: cli.command,
+            interval: cli.interval,
+            concurrency: cli.concurrency,
 
             result: CommandResult::default(),
 

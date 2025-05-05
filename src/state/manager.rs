@@ -16,11 +16,7 @@ pub struct Manager {
 
 impl Manager {
     pub fn new(cli: Cli) -> Manager {
-        let mut state = state::State::default();
-
-        state.interval = cli.interval;
-        state.concurrency = cli.concurrency;
-        state.command = cli.command;
+        let state = state::State::new(cli);
 
         Manager {
             state: Arc::new(RwLock::new(state)),
