@@ -161,11 +161,21 @@ impl Manager {
 
         if let Some(CommandResult {
             stdout: Some(stdout),
+            stderr: Some(stderr),
+            status: Some(status),
             ..
         }) = result
         {
+            let (content, style) = if status == 0 {
+                (stdout, Style::new())
+            } else {
+                (stderr, Style::new().red())
+            };
+
             frame.render_widget(
-                Paragraph::new(stdout).scroll(((state.ui.vertical_scroll as u16), 0)),
+                Paragraph::new(content)
+                    .style(style)
+                    .scroll(((state.ui.vertical_scroll as u16), 0)),
                 content_chunks[0].inner(Margin {
                     horizontal: 1,
                     vertical: 0,
