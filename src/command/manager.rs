@@ -89,13 +89,13 @@ impl Manager {
                             let tick_diff = t - prev_tick;
                             LOGGER.debug(format!("{:#?}", tick_diff));
 
-                            let (interval, concurrency, now_running) = {
+                            let (interval, concurrency, command_state) = {
                                 let state = state.read().unwrap();
-                                (state.global.interval, state.global.concurrency, state.command.running_count)
+                                (state.global.interval, state.global.concurrency, state.command.clone())
                             };
-                            LOGGER.debug(format!("now running: {}", now_running));
+                            LOGGER.debug(format!("now running: {}", command_state.running_count));
 
-                            if tick_diff.as_millis() > (interval * 1000.0) as u128 && now_running < concurrency {
+                            if tick_diff.as_millis() > (interval * 1000.0) as u128 && command_state.running_count < concurrency {
                                 LOGGER.debug("prepare run");
 
                                 let command = {
