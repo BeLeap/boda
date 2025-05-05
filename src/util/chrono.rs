@@ -1,5 +1,7 @@
 use chrono::TimeDelta;
 
+pub type DateTime = chrono::DateTime<chrono::Local>;
+
 pub fn human_readable_delta(td: TimeDelta) -> String {
     let diff = td.num_milliseconds();
 

@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use super::state::CommandResult;
+use crate::util;
 
 #[derive(Debug)]
 pub enum Ui {
@@ -15,6 +15,6 @@ pub enum Ui {
 
 #[derive(Debug)]
 pub enum Command {
-    RunResult(CommandResult),
-    StartRun(Instant),
+    RunResult(util::chrono::DateTime, String, String, u8),
+    StartRun(Instant, util::chrono::DateTime),
 }

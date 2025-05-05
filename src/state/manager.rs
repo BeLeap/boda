@@ -82,11 +82,14 @@ impl Manager {
     fn handle_command_action(&self, command_action: action::Command) {
         let mut state = self.state.write().unwrap();
         match command_action {
-            action::Command::RunResult(command_result) => {
-                state.global.append_command_result(command_result);
+            action::Command::RunResult(timestamp, stdout, stderr, status) => {
+                state
+                    .global
+                    .record_command_result(timestamp, stdout, stderr, status);
                 state.command.running_count -= 1;
             }
-            action::Command::StartRun(t) => {
+            action::Command::StartRun(t, timestamp) => {
+                state.global.record_command(timestamp);
                 state.command.prev_tick = t;
                 state.command.running_count += 1;
             }

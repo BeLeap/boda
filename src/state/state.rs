@@ -8,7 +8,7 @@ use std::{
 use log::{debug, error, info};
 use rusqlite::Connection;
 
-use crate::Cli;
+use crate::{Cli, util};
 
 #[derive(Debug)]
 pub struct State {
@@ -59,9 +59,9 @@ impl Global {
             "CREATE TABLE command_result (
                 id INTEGER PRIMARY KEY,
                 timestamp INTEGER NOT NULL,
-                stdout TEXT NOT NULL,
-                stderr TEXT NOT NULL,
-                status INTEGER NOT NULL
+                stdout TEXT,
+                stderr TEXT,
+                status INTEGER
             )",
             (),
         )
@@ -86,16 +86,26 @@ impl Global {
 }
 
 impl Global {
-    pub fn append_command_result(&self, command_result: CommandResult) {
+    pub fn record_command(&self, timestamp: chrono::DateTime<chrono::Local>) {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT INTO command_result (timestamp, stdout, stderr, status) VALUES (?1, ?2, ?3, ?4)",
-            (
-                command_result.timestamp.timestamp_millis(),
-                command_result.stdout,
-                command_result.stderr,
-                command_result.status,
-            ),
+            "INSERT INTO command_result (timestamp) VALUES (?1)",
+            (timestamp.timestamp_millis(),),
+        )
+        .unwrap();
+    }
+
+    pub fn record_command_result(
+        &self,
+        timestamp: util::chrono::DateTime,
+        stdout: String,
+        stderr: String,
+        status: u8,
+    ) {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE command_result SET stdout=?1, stderr=?2, status=?3 WHERE timestamp=?4",
+            (stdout, stderr, status, timestamp.timestamp_millis()),
         )
         .unwrap();
     }
@@ -159,15 +169,16 @@ impl Global {
 
 #[derive(Debug, Clone)]
 pub struct CommandResult {
-    pub timestamp: chrono::DateTime<chrono::Local>,
-    pub stdout: String,
-    pub stderr: String,
-    pub status: u8,
+    pub timestamp: util::chrono::DateTime,
+
+    pub stdout: Option<String>,
+    pub stderr: Option<String>,
+    pub status: Option<u8>,
 }
 
 pub struct CommandResultSummary {
-    pub timestamp: chrono::DateTime<chrono::Local>,
-    pub status: u8,
+    pub timestamp: util::chrono::DateTime,
+    pub status: Option<u8>,
 }
 
 #[derive(Debug, Clone, Default)]

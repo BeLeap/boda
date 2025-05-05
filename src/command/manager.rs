@@ -9,10 +9,7 @@ use std::{
 use crossbeam_channel::{select, tick, unbounded};
 use log::{debug, error};
 
-use crate::state::{
-    action,
-    state::{self, CommandResult},
-};
+use crate::state::{action, state};
 
 pub struct Manager {
     command_tx: crossbeam_channel::Sender<action::Command>,
@@ -48,8 +45,8 @@ impl Manager {
         };
 
         thread::spawn(move || {
-            command_tx.send(action::Command::StartRun(t)).unwrap();
             let now = chrono::Local::now();
+            command_tx.send(action::Command::StartRun(t, now)).unwrap();
 
             let command = command.join(" ");
             let result = Command::new(shell)
@@ -62,12 +59,12 @@ impl Manager {
             let stderr = String::from_utf8_lossy(&result.stderr).to_string();
             let status = result.status;
 
-            if let Err(e) = command_tx.send(action::Command::RunResult(CommandResult {
-                timestamp: now,
+            if let Err(e) = command_tx.send(action::Command::RunResult(
+                now,
                 stdout,
                 stderr,
-                status: (status.code().unwrap() as u8),
-            })) {
+                status.code().unwrap() as u8,
+            )) {
                 error!("error send command result: {}", e);
             }
 

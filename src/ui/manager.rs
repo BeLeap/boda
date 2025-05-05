@@ -16,7 +16,11 @@ use ratatui::{
     widgets::{Block, Paragraph},
 };
 
-use crate::{error::BodaResult, state, util};
+use crate::{
+    error::BodaResult,
+    state::{self, state::CommandResult},
+    util,
+};
 
 #[derive(Debug)]
 pub struct Manager {
@@ -155,10 +159,13 @@ impl Manager {
             heading_chunks[2],
         );
 
-        if let Some(result) = result {
+        if let Some(CommandResult {
+            stdout: Some(stdout),
+            ..
+        }) = result
+        {
             frame.render_widget(
-                Paragraph::new(result.stdout.clone().split("\r").collect::<String>())
-                    .scroll(((state.ui.vertical_scroll as u16), 0)),
+                Paragraph::new(stdout).scroll(((state.ui.vertical_scroll as u16), 0)),
                 content_chunks[0].inner(Margin {
                     horizontal: 1,
                     vertical: 0,
@@ -190,14 +197,14 @@ impl Manager {
                     }),
                     split[0],
                 );
-                frame.render_widget(
-                    Text::raw(format!("{:?}", summary.status)).style(if summary.status == 0 {
-                        Style::new().green()
-                    } else {
-                        Style::new().red()
-                    }),
-                    split[1],
-                );
+
+                let (code, style) = match summary.status {
+                    Some(0) => ("0".to_string(), Style::new().green()),
+                    Some(s) => (format!("{}", s), Style::new().red()),
+                    None => ("Running".to_string(), Style::new().gray()),
+                };
+
+                frame.render_widget(Text::raw(code).style(style), split[1]);
             }
         }
     }
