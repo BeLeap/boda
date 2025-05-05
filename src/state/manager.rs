@@ -33,24 +33,7 @@ impl Manager {
                 select! {
                     recv(ui_action_rx) -> action_recv => {
                         if let Ok(action) = action_recv {
-                            {
-                                let mut state = self.state.write().unwrap();
-                                match action {
-                                    action::Ui::Quit => {
-                                        LOGGER.debug("received quit");
-
-                                        state.running = false;
-                                    },
-                                    action::Ui::ScrollUp => {
-                                        if state.vertical_scroll > 0 {
-                                            state.vertical_scroll -= 1;
-                                        }
-                                    },
-                                    action::Ui::ScrollDown => {
-                                        state.vertical_scroll += 1;
-                                    },
-                                }
-                            }
+                            self.handle_ui_action(action);
 
                             let state = self.state.read().unwrap();
                             if state.running == false {
@@ -59,18 +42,41 @@ impl Manager {
                             }
                         }
                     }
-                    recv(command_action_rx) -> command_recv => {
-                        if let Ok(command) = command_recv {
-                            let mut state = self.state.write().unwrap();
-                            match command {
-                                action::Command::Append(command_result) => {
-                                    state.result = command_result;
-                                },
-                            }
+                    recv(command_action_rx) -> action_recv => {
+                        if let Ok(action) = action_recv {
+                            self.handle_command_action(action);
                         }
                     }
                 }
             }
         })
+    }
+
+    fn handle_ui_action(&self, ui_action: action::Ui) {
+        let mut state = self.state.write().unwrap();
+        match ui_action {
+            action::Ui::Quit => {
+                LOGGER.debug("received quit");
+
+                state.running = false;
+            }
+            action::Ui::ScrollUp => {
+                if state.vertical_scroll > 0 {
+                    state.vertical_scroll -= 1;
+                }
+            }
+            action::Ui::ScrollDown => {
+                state.vertical_scroll += 1;
+            }
+        }
+    }
+
+    fn handle_command_action(&self, command_action: action::Command) {
+        let mut state = self.state.write().unwrap();
+        match command_action {
+            action::Command::Append(command_result) => {
+                state.result = command_result;
+            }
+        }
     }
 }
