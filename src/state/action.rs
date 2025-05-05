@@ -11,4 +11,6 @@ pub enum Ui {
 #[derive(Debug)]
 pub enum Command {
     Append(CommandResult),
+    IncreaseRunning,
+    DecreaseRunning,
 }

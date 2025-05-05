@@ -77,6 +77,12 @@ impl Manager {
             action::Command::Append(command_result) => {
                 state.global.result = command_result;
             }
+            action::Command::IncreaseRunning => {
+                state.command.running_count += 1;
+            }
+            action::Command::DecreaseRunning => {
+                state.command.running_count -= 1;
+            }
         }
     }
 }

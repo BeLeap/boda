@@ -6,6 +6,7 @@ use crate::Cli;
 pub struct State {
     pub global: Global,
     pub ui: Ui,
+    pub command: Command,
 }
 
 impl State {
@@ -13,6 +14,7 @@ impl State {
         State {
             global: Global::new(cli),
             ui: Ui::default(),
+            command: Command::default(),
         }
     }
 }
