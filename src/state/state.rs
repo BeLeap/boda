@@ -10,7 +10,7 @@ pub struct State {
 
     pub result: CommandResult,
 
-    pub vertical_scroll: usize,
+    pub ui: Ui,
 }
 
 impl State {
@@ -24,7 +24,7 @@ impl State {
 
             result: CommandResult::default(),
 
-            vertical_scroll: 0,
+            ui: Ui::default(),
         }
     }
 }
@@ -48,4 +48,9 @@ impl std::fmt::Display for CommandResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:#?}", self)
     }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Ui {
+    pub vertical_scroll: usize,
 }

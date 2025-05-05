@@ -125,7 +125,7 @@ impl Manager {
 
         frame.render_widget(
             Paragraph::new(state.result.stdout.clone().split("\r").collect::<String>())
-                .scroll(((state.vertical_scroll as u16), 0)),
+                .scroll(((state.ui.vertical_scroll as u16), 0)),
             chunks[1].inner(Margin {
                 horizontal: 1,
                 vertical: 0,

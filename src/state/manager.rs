@@ -61,12 +61,12 @@ impl Manager {
                 state.running = false;
             }
             action::Ui::ScrollUp => {
-                if state.vertical_scroll > 0 {
-                    state.vertical_scroll -= 1;
+                if state.ui.vertical_scroll > 0 {
+                    state.ui.vertical_scroll -= 1;
                 }
             }
             action::Ui::ScrollDown => {
-                state.vertical_scroll += 1;
+                state.ui.vertical_scroll += 1;
             }
         }
     }
