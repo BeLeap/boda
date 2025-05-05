@@ -59,7 +59,9 @@ impl Global {
             "CREATE TABLE command_result (
                 id INTEGER PRIMARY KEY,
                 timestamp INTEGER NOT NULL,
-                stdout TEXT NOT NULL
+                stdout TEXT NOT NULL,
+                stderr TEXT NOT NULL,
+                status INTEGER NOT NULL
             )",
             (),
         )
@@ -87,10 +89,12 @@ impl Global {
     pub fn append_command_result(&self, command_result: CommandResult) {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT INTO command_result (timestamp, stdout) VALUES (?1, ?2)",
+            "INSERT INTO command_result (timestamp, stdout, stderr, status) VALUES (?1, ?2, ?3, ?4)",
             (
                 command_result.timestamp.timestamp_millis(),
                 command_result.stdout,
+                command_result.stderr,
+                command_result.status,
             ),
         )
         .unwrap();
@@ -98,9 +102,9 @@ impl Global {
 
     pub fn last_command_result(&self) -> Option<CommandResult> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = match conn
-            .prepare("SELECT timestamp, stdout FROM command_result ORDER BY id DESC LIMIT 1")
-        {
+        let mut stmt = match conn.prepare(
+            "SELECT timestamp, stdout, stderr, status FROM command_result ORDER BY id DESC LIMIT 1",
+        ) {
             Ok(stmt) => stmt,
             Err(e) => {
                 error!("error on select: {}", e);
@@ -114,6 +118,8 @@ impl Global {
                         .unwrap()
                         .into(),
                     stdout: row.get(1).unwrap(),
+                    stderr: row.get(2).unwrap(),
+                    status: row.get(3).unwrap(),
                 })
             })
             .unwrap();
@@ -126,20 +132,24 @@ impl Global {
         None
     }
 
-    pub fn get_history(&self) -> Vec<chrono::DateTime<chrono::Local>> {
+    pub fn get_history(&self) -> Vec<CommandResultSummary> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = match conn.prepare("SELECT timestamp FROM command_result ORDER BY id DESC") {
-            Ok(stmt) => stmt,
-            Err(e) => {
-                error!("error on select: {}", e);
-                return vec![];
-            }
-        };
+        let mut stmt =
+            match conn.prepare("SELECT timestamp, status FROM command_result ORDER BY id DESC") {
+                Ok(stmt) => stmt,
+                Err(e) => {
+                    error!("error on select: {}", e);
+                    return vec![];
+                }
+            };
         let result_iter = stmt
             .query_map([], |row| {
-                Ok(chrono::DateTime::from_timestamp_millis(row.get(0).unwrap())
-                    .unwrap()
-                    .into())
+                Ok(CommandResultSummary {
+                    timestamp: chrono::DateTime::from_timestamp_millis(row.get(0).unwrap())
+                        .unwrap()
+                        .into(),
+                    status: row.get(1).unwrap(),
+                })
             })
             .unwrap();
 
@@ -151,21 +161,19 @@ impl Global {
 pub struct CommandResult {
     pub timestamp: chrono::DateTime<chrono::Local>,
     pub stdout: String,
-}
-
-impl Default for CommandResult {
-    fn default() -> Self {
-        CommandResult {
-            timestamp: chrono::Local::now(),
-            stdout: "".to_string(),
-        }
-    }
+    pub stderr: String,
+    pub status: u8,
 }
 
 impl std::fmt::Display for CommandResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:#?}", self)
     }
+}
+
+pub struct CommandResultSummary {
+    pub timestamp: chrono::DateTime<chrono::Local>,
+    pub status: u8,
 }
 
 #[derive(Debug, Clone, Default)]

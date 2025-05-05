@@ -172,22 +172,31 @@ impl Manager {
                 content_chunks[1],
             );
 
-            let timestamps = state.global.get_history();
+            let history = state.global.get_history();
 
-            let constraints = vec![Constraint::Length(1); timestamps.len()];
+            let constraints = vec![Constraint::Length(1); history.len()];
             let chunks = Layout::vertical(constraints).split(content_chunks[1].inner(Margin {
                 horizontal: 1,
                 vertical: 1,
             }));
 
-            for (idx, timestamp) in timestamps.iter().enumerate() {
+            for (idx, summary) in history.iter().enumerate() {
+                let split = Layout::horizontal([Constraint::Min(1); 2]).split(chunks[idx]);
                 frame.render_widget(
                     Text::raw(if state.ui.relative_history {
-                        util::chrono::human_readable_delta(-(Local::now() - timestamp))
+                        util::chrono::human_readable_delta(-(Local::now() - summary.timestamp))
                     } else {
-                        format!("{}", timestamp.time())
+                        format!("{}", summary.timestamp.time())
                     }),
-                    chunks[idx],
+                    split[0],
+                );
+                frame.render_widget(
+                    Text::raw(format!("{:?}", summary.status)).style(if summary.status == 0 {
+                        Style::new().green()
+                    } else {
+                        Style::new().red()
+                    }),
+                    split[1],
                 );
             }
         }

@@ -52,17 +52,21 @@ impl Manager {
             let now = chrono::Local::now();
 
             let command = command.join(" ");
-            let output = Command::new(shell)
+            let result = Command::new(shell)
                 .args(["-c"])
                 .arg(command)
                 .output()
                 .unwrap();
 
-            let result = String::from_utf8_lossy(&output.stdout).to_string();
+            let stdout = String::from_utf8_lossy(&result.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&result.stderr).to_string();
+            let status = result.status;
 
             if let Err(e) = command_tx.send(action::Command::RunResult(CommandResult {
                 timestamp: now,
-                stdout: result,
+                stdout,
+                stderr,
+                status: (status.code().unwrap() as u8),
             })) {
                 error!("error send command result: {}", e);
             }
