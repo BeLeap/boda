@@ -165,12 +165,6 @@ pub struct CommandResult {
     pub status: u8,
 }
 
-impl std::fmt::Display for CommandResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#?}", self)
-    }
-}
-
 pub struct CommandResultSummary {
     pub timestamp: chrono::DateTime<chrono::Local>,
     pub status: u8,
