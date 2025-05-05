@@ -17,12 +17,12 @@ use crate::{error, state, util::log::LOGGER};
 
 #[derive(Debug)]
 pub struct Manager {
-    action_tx: crossbeam_channel::Sender<state::action::Action>,
+    action_tx: crossbeam_channel::Sender<state::action::Ui>,
 }
 
 impl Manager {
-    pub fn new() -> (Manager, crossbeam_channel::Receiver<state::action::Action>) {
-        let (tx, rx) = unbounded::<state::action::Action>();
+    pub fn new() -> (Manager, crossbeam_channel::Receiver<state::action::Ui>) {
+        let (tx, rx) = unbounded::<state::action::Ui>();
 
         (Manager { action_tx: tx }, rx)
     }
@@ -67,20 +67,16 @@ impl Manager {
             (_, KeyCode::Esc | KeyCode::Char('q'))
             | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => {
                 LOGGER.debug("sending quit");
-                if let Err(_) = self.action_tx.send(state::action::Action::Quit) {
+                if let Err(_) = self.action_tx.send(state::action::Ui::Quit) {
                     LOGGER.error("error on send")
                 }
                 LOGGER.debug("sent quit");
             }
             (_, KeyCode::Char('j')) => {
-                self.action_tx
-                    .send(state::action::Action::ScrollDown)
-                    .unwrap();
+                self.action_tx.send(state::action::Ui::ScrollDown).unwrap();
             }
             (_, KeyCode::Char('k')) => {
-                self.action_tx
-                    .send(state::action::Action::ScrollUp)
-                    .unwrap();
+                self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
             }
             // Add other key handlers here.
             _ => {}

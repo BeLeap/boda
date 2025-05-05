@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub enum Action {
+pub enum Ui {
     Quit,
 
     ScrollDown,

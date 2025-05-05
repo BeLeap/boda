@@ -29,28 +29,28 @@ impl Manager {
 
     pub fn run(
         self,
-        action_rx: crossbeam_channel::Receiver<action::Action>,
+        ui_action_rx: crossbeam_channel::Receiver<action::Ui>,
         command_rx: crossbeam_channel::Receiver<state::CommandResult>,
     ) -> thread::JoinHandle<()> {
         thread::spawn(move || {
             loop {
                 select! {
-                    recv(action_rx) -> action_recv => {
+                    recv(ui_action_rx) -> action_recv => {
                         if let Ok(action) = action_recv {
                             {
                                 let mut state = self.state.write().unwrap();
                                 match action {
-                                    action::Action::Quit => {
+                                    action::Ui::Quit => {
                                         LOGGER.debug("received quit");
 
                                         state.running = false;
                                     },
-                                    action::Action::ScrollUp => {
+                                    action::Ui::ScrollUp => {
                                         if state.vertical_scroll > 0 {
                                             state.vertical_scroll -= 1;
                                         }
                                     },
-                                    action::Action::ScrollDown => {
+                                    action::Ui::ScrollDown => {
                                         state.vertical_scroll += 1;
                                     },
                                 }
