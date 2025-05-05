@@ -78,7 +78,8 @@ impl Manager {
                 state.global.result = command_result;
                 state.command.running_count -= 1;
             }
-            action::Command::StartRun => {
+            action::Command::StartRun(t) => {
+                state.command.prev_tick = t;
                 state.command.running_count += 1;
             }
         }

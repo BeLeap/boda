@@ -45,13 +45,13 @@ impl Manager {
             let ticker = tick(Duration::from_millis(100));
             let mut prev_tick: Instant = Instant::now();
 
-            let run = |command: Vec<String>| {
+            let run = |t: Instant, command: Vec<String>| {
                 LOGGER.debug("run!");
                 let shell = self.shell.clone();
                 let command_tx = self.command_tx.clone();
 
                 thread::spawn(move || {
-                    command_tx.send(action::Command::StartRun).unwrap();
+                    command_tx.send(action::Command::StartRun(t)).unwrap();
                     let now = chrono::Local::now();
 
                     let command = command.join(" ");
@@ -72,7 +72,7 @@ impl Manager {
                 let state = state.read().unwrap();
                 state.global.command.clone()
             };
-            run(command);
+            run(Instant::now(), command);
 
             loop {
                 select! {
@@ -86,24 +86,19 @@ impl Manager {
                             }
 
 
-                            let tick_diff = t - prev_tick;
-                            LOGGER.debug(format!("{:#?}", tick_diff));
-
-                            let (interval, concurrency, command_state) = {
+                            let can_run = {
                                 let state = state.read().unwrap();
-                                (state.global.interval, state.global.concurrency, state.command.clone())
+                                state.can_run(t)
                             };
-                            LOGGER.debug(format!("now running: {}", command_state.running_count));
 
-                            if tick_diff.as_millis() > (interval * 1000.0) as u128 && command_state.running_count < concurrency {
+                            if can_run {
                                 LOGGER.debug("prepare run");
 
                                 let command = {
                                     let state = state.read().unwrap();
                                     state.global.command.clone()
                                 };
-                                run(command);
-                                prev_tick = t;
+                                run(t, command);
                             }
                         }
                     }

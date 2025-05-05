@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use super::state::CommandResult;
 
 #[derive(Debug)]
@@ -11,5 +13,5 @@ pub enum Ui {
 #[derive(Debug)]
 pub enum Command {
     RunResult(CommandResult),
-    StartRun,
+    StartRun(Instant),
 }
