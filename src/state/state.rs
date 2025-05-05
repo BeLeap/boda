@@ -119,6 +119,26 @@ impl Global {
         }
         None
     }
+
+    pub fn get_history(&self) -> Vec<chrono::DateTime<chrono::Local>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = match conn.prepare("SELECT timestamp FROM command_result ORDER BY id DESC") {
+            Ok(stmt) => stmt,
+            Err(e) => {
+                error!("error on select: {}", e);
+                return vec![];
+            }
+        };
+        let result_iter = stmt
+            .query_map([], |row| {
+                Ok(chrono::DateTime::from_timestamp_millis(row.get(0).unwrap())
+                    .unwrap()
+                    .into())
+            })
+            .unwrap();
+
+        return result_iter.map(|it| it.unwrap()).collect();
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -144,6 +164,7 @@ impl std::fmt::Display for CommandResult {
 
 #[derive(Debug, Clone, Default)]
 pub struct Ui {
+    pub show_history: bool,
     pub vertical_scroll: usize,
 }
 

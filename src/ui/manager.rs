@@ -11,6 +11,7 @@ use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout, Margin},
     style::{Style, Stylize},
+    text::Text,
     widgets::{Block, Paragraph},
 };
 
@@ -79,6 +80,11 @@ impl Manager {
             (_, KeyCode::Char('k')) => {
                 self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
             }
+            (_, KeyCode::Char(' ')) => {
+                self.action_tx
+                    .send(state::action::Ui::ToggleHistory)
+                    .unwrap();
+            }
             // Add other key handlers here.
             _ => {}
         }
@@ -86,9 +92,10 @@ impl Manager {
 
     fn render(&mut self, frame: &mut Frame, state: &state::state::State) {
         let result = state.global.last_command_result();
+        let show_history = state.ui.show_history;
 
         let area = frame.area();
-        let chunks =
+        let rows =
             Layout::vertical([Constraint::Length(3), Constraint::Percentage(100)]).split(area);
 
         let heading_chunks = Layout::horizontal([
@@ -96,7 +103,14 @@ impl Manager {
             Constraint::Percentage(70),
             Constraint::Percentage(20),
         ])
-        .split(chunks[0]);
+        .split(rows[0]);
+
+        let layout = if show_history {
+            vec![Constraint::Percentage(80), Constraint::Percentage(20)]
+        } else {
+            vec![Constraint::Percentage(100)]
+        };
+        let content_chunks = Layout::horizontal(layout).split(rows[1]);
 
         frame.render_widget(
             Paragraph::new(format!("{}", state.global.interval)).block(
@@ -130,19 +144,35 @@ impl Manager {
             heading_chunks[2],
         );
 
-        let result = match result {
-            Some(r) => r,
-            None => return,
-        };
+        if let Some(result) = result {
+            frame.render_widget(
+                Paragraph::new(result.stdout.clone().split("\r").collect::<String>())
+                    .scroll(((state.ui.vertical_scroll as u16), 0)),
+                content_chunks[0].inner(Margin {
+                    horizontal: 1,
+                    vertical: 0,
+                }),
+            );
+        }
 
-        frame.render_widget(
-            Paragraph::new(result.stdout.clone().split("\r").collect::<String>())
-                .scroll(((state.ui.vertical_scroll as u16), 0)),
-            chunks[1].inner(Margin {
+        if show_history {
+            frame.render_widget(
+                Block::bordered().border_style(Style::new().gray()),
+                content_chunks[1],
+            );
+
+            let timestamps = state.global.get_history();
+
+            let constraints = vec![Constraint::Length(1); timestamps.len()];
+            let chunks = Layout::vertical(constraints).split(content_chunks[1].inner(Margin {
                 horizontal: 1,
-                vertical: 0,
-            }),
-        );
+                vertical: 1,
+            }));
+
+            for (idx, timestamp) in timestamps.iter().enumerate() {
+                frame.render_widget(Text::raw(format!("{}", timestamp)), chunks[idx]);
+            }
+        }
     }
 }
 
