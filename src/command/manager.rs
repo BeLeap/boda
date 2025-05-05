@@ -9,24 +9,27 @@ use std::{
 use crossbeam_channel::{select, tick, unbounded};
 
 use crate::{
-    state::state::{self, CommandResult},
+    state::{
+        action,
+        state::{self, CommandResult},
+    },
     util::log::LOGGER,
 };
 
 pub struct Manager {
-    command_tx: crossbeam_channel::Sender<CommandResult>,
+    command_tx: crossbeam_channel::Sender<action::Command>,
 
     shell: String,
 }
 
 impl Manager {
-    pub fn new() -> (Manager, crossbeam_channel::Receiver<CommandResult>) {
+    pub fn new() -> (Manager, crossbeam_channel::Receiver<action::Command>) {
         let shell = match env::var("SHELL") {
             Ok(s) => s,
             Err(_) => "/bin/sh".to_string(),
         };
 
-        let (tx, rx) = unbounded::<CommandResult>();
+        let (tx, rx) = unbounded::<action::Command>();
         (
             Manager {
                 command_tx: tx,
@@ -57,10 +60,10 @@ impl Manager {
                     let result = String::from_utf8_lossy(&output.stdout).to_string();
 
                     command_tx
-                        .send(CommandResult {
+                        .send(action::Command::Append(CommandResult {
                             timestamp: now,
                             stdout: result,
-                        })
+                        }))
                         .unwrap();
                     LOGGER.debug("run completed!");
                     {

@@ -23,13 +23,13 @@ fn main() -> error::BodaResult<()> {
     let cli = Cli::parse();
 
     let state_manager = state::manager::Manager::new(cli);
-    let (command_manger, command_rx) = command::manager::Manager::new();
+    let (command_manger, command_action_rx) = command::manager::Manager::new();
     let (ui_manager, ui_action_rx) = ui::manager::Manager::new();
 
     let handles = [
         command_manger.run(state_manager.state.clone()),
         ui_manager.run(state_manager.state.clone()),
-        state_manager.run(ui_action_rx, command_rx),
+        state_manager.run(ui_action_rx, command_action_rx),
     ];
     for handle in handles {
         handle.join().expect("unable to join thread");

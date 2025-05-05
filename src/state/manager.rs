@@ -30,7 +30,7 @@ impl Manager {
     pub fn run(
         self,
         ui_action_rx: crossbeam_channel::Receiver<action::Ui>,
-        command_rx: crossbeam_channel::Receiver<state::CommandResult>,
+        command_action_rx: crossbeam_channel::Receiver<action::Command>,
     ) -> thread::JoinHandle<()> {
         thread::spawn(move || {
             loop {
@@ -63,12 +63,14 @@ impl Manager {
                             }
                         }
                     }
-                    recv(command_rx) -> command_recv => {
+                    recv(command_action_rx) -> command_recv => {
                         if let Ok(command) = command_recv {
-                            {
-                                let mut state = self.state.write().unwrap();
-                                state.result = command;
-                            };
+                            let mut state = self.state.write().unwrap();
+                            match command {
+                                action::Command::Append(command_result) => {
+                                    state.result = command_result;
+                                },
+                            }
                         }
                     }
                 }
