@@ -11,6 +11,7 @@ use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout, Margin},
     style::{Style, Stylize},
+    text::Text,
     widgets::{Block, Paragraph},
 };
 
@@ -143,19 +144,35 @@ impl Manager {
             heading_chunks[2],
         );
 
-        let result = match result {
-            Some(r) => r,
-            None => return,
-        };
+        if let Some(result) = result {
+            frame.render_widget(
+                Paragraph::new(result.stdout.clone().split("\r").collect::<String>())
+                    .scroll(((state.ui.vertical_scroll as u16), 0)),
+                content_chunks[0].inner(Margin {
+                    horizontal: 1,
+                    vertical: 0,
+                }),
+            );
+        }
 
-        frame.render_widget(
-            Paragraph::new(result.stdout.clone().split("\r").collect::<String>())
-                .scroll(((state.ui.vertical_scroll as u16), 0)),
-            content_chunks[0].inner(Margin {
+        if show_history {
+            frame.render_widget(
+                Block::bordered().border_style(Style::new().gray()),
+                content_chunks[1],
+            );
+
+            let timestamps = state.global.get_history();
+
+            let constraints = vec![Constraint::Length(1); timestamps.len()];
+            let chunks = Layout::vertical(constraints).split(content_chunks[1].inner(Margin {
                 horizontal: 1,
-                vertical: 0,
-            }),
-        );
+                vertical: 1,
+            }));
+
+            for (idx, timestamp) in timestamps.iter().enumerate() {
+                frame.render_widget(Text::raw(format!("{}", timestamp)), chunks[idx]);
+            }
+        }
     }
 }
 
