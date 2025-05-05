@@ -55,7 +55,7 @@ impl Manager {
 
             let command = command.join(" ");
             let output = Command::new(shell)
-                .args(["-i", "-c"])
+                .args(["-c"])
                 .arg(command)
                 .output()
                 .unwrap();
