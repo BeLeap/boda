@@ -5,7 +5,7 @@ use std::{
     time::Instant,
 };
 
-use log::{error, info};
+use log::{debug, error, info};
 use rusqlite::Connection;
 
 use crate::Cli;
@@ -30,6 +30,8 @@ impl State {
 impl State {
     pub fn can_run(&self, t: Instant) -> bool {
         let tick_diff = t - self.command.prev_tick;
+
+        debug!("now running: {}", self.command.running_count);
 
         tick_diff.as_millis() > (self.global.interval * 1000.0) as u128
             && (self.command.running_count < self.global.concurrency)
