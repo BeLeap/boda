@@ -43,7 +43,6 @@ impl Manager {
     pub fn run(self, state: Arc<RwLock<state::State>>) -> JoinHandle<()> {
         thread::spawn(move || {
             let ticker = tick(Duration::from_millis(100));
-            let mut prev_tick: Instant = Instant::now();
 
             let run = |t: Instant, command: Vec<String>| {
                 LOGGER.debug("run!");
