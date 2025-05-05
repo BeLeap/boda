@@ -7,7 +7,7 @@ use std::{
 };
 
 use crossbeam_channel::{select, tick, unbounded};
-use log::debug;
+use log::{debug, error};
 
 use crate::state::{
     action,
@@ -60,12 +60,13 @@ impl Manager {
 
             let result = String::from_utf8_lossy(&output.stdout).to_string();
 
-            command_tx
-                .send(action::Command::RunResult(CommandResult {
-                    timestamp: now,
-                    stdout: result,
-                }))
-                .unwrap();
+            if let Err(e) = command_tx.send(action::Command::RunResult(CommandResult {
+                timestamp: now,
+                stdout: result,
+            })) {
+                error!("error send command result: {}", e);
+            }
+
             debug!("run completed!");
         });
     }
