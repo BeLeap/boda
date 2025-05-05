@@ -6,7 +6,8 @@ use super::state::CommandResult;
 pub enum Ui {
     Quit,
 
-    ToggleHistory,
+    ToggleShowHistory,
+    ToggleRelativeHistory,
 
     ScrollDown,
     ScrollUp,

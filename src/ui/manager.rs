@@ -4,6 +4,7 @@ use std::{
     time::Duration,
 };
 
+use chrono::Local;
 use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
 use log::{debug, error};
@@ -15,7 +16,7 @@ use ratatui::{
     widgets::{Block, Paragraph},
 };
 
-use crate::{error::BodaResult, state};
+use crate::{error::BodaResult, state, util};
 
 #[derive(Debug)]
 pub struct Manager {
@@ -80,9 +81,14 @@ impl Manager {
             (_, KeyCode::Char('k')) => {
                 self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
             }
+            (_, KeyCode::Char('r')) => {
+                self.action_tx
+                    .send(state::action::Ui::ToggleRelativeHistory)
+                    .unwrap();
+            }
             (_, KeyCode::Char(' ')) => {
                 self.action_tx
-                    .send(state::action::Ui::ToggleHistory)
+                    .send(state::action::Ui::ToggleShowHistory)
                     .unwrap();
             }
             // Add other key handlers here.
@@ -175,7 +181,14 @@ impl Manager {
             }));
 
             for (idx, timestamp) in timestamps.iter().enumerate() {
-                frame.render_widget(Text::raw(format!("{}", timestamp)), chunks[idx]);
+                frame.render_widget(
+                    Text::raw(if state.ui.relative_history {
+                        util::chrono::human_readable_delta(-(Local::now() - timestamp))
+                    } else {
+                        format!("{}", timestamp.time())
+                    }),
+                    chunks[idx],
+                );
             }
         }
     }
