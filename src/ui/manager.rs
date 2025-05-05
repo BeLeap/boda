@@ -79,6 +79,11 @@ impl Manager {
             (_, KeyCode::Char('k')) => {
                 self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
             }
+            (_, KeyCode::Char(' ')) => {
+                self.action_tx
+                    .send(state::action::Ui::ToggleHistory)
+                    .unwrap();
+            }
             // Add other key handlers here.
             _ => {}
         }
@@ -86,9 +91,10 @@ impl Manager {
 
     fn render(&mut self, frame: &mut Frame, state: &state::state::State) {
         let result = state.global.last_command_result();
+        let show_history = state.ui.show_history;
 
         let area = frame.area();
-        let chunks =
+        let rows =
             Layout::vertical([Constraint::Length(3), Constraint::Percentage(100)]).split(area);
 
         let heading_chunks = Layout::horizontal([
@@ -96,7 +102,14 @@ impl Manager {
             Constraint::Percentage(70),
             Constraint::Percentage(20),
         ])
-        .split(chunks[0]);
+        .split(rows[0]);
+
+        let layout = if show_history {
+            vec![Constraint::Percentage(80), Constraint::Percentage(20)]
+        } else {
+            vec![Constraint::Percentage(100)]
+        };
+        let content_chunks = Layout::horizontal(layout).split(rows[1]);
 
         frame.render_widget(
             Paragraph::new(format!("{}", state.global.interval)).block(
@@ -138,7 +151,7 @@ impl Manager {
         frame.render_widget(
             Paragraph::new(result.stdout.clone().split("\r").collect::<String>())
                 .scroll(((state.ui.vertical_scroll as u16), 0)),
-            chunks[1].inner(Margin {
+            content_chunks[0].inner(Margin {
                 horizontal: 1,
                 vertical: 0,
             }),

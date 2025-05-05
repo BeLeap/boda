@@ -70,6 +70,9 @@ impl Manager {
             action::Ui::ScrollDown => {
                 state.ui.vertical_scroll += 1;
             }
+            action::Ui::ToggleHistory => {
+                state.ui.show_history = !state.ui.show_history;
+            }
         }
     }
 

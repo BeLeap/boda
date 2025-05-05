@@ -144,6 +144,7 @@ impl std::fmt::Display for CommandResult {
 
 #[derive(Debug, Clone, Default)]
 pub struct Ui {
+    pub show_history: bool,
     pub vertical_scroll: usize,
 }
 
