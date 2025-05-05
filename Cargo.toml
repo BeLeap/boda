@@ -2,7 +2,7 @@
 name = "boda"
 version = "0.3.3"
 edition = "2024"
-repository = "https://git.sr.ht/~beleap/boda"
+repository = "https://github.com/BeLeap/boda"
 description = "opinionated alternative watch"
 license-file = "LICENSE"
 
