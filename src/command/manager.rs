@@ -7,13 +7,11 @@ use std::{
 };
 
 use crossbeam_channel::{select, tick, unbounded};
+use log::debug;
 
-use crate::{
-    state::{
-        action,
-        state::{self, CommandResult},
-    },
-    util::log::LOGGER,
+use crate::state::{
+    action,
+    state::{self, CommandResult},
 };
 
 pub struct Manager {
@@ -41,7 +39,7 @@ impl Manager {
     }
 
     pub fn execute(&self, t: Instant, state: &Arc<RwLock<state::State>>) {
-        LOGGER.debug("run!");
+        debug!("run!");
         let shell = self.shell.clone();
         let command_tx = self.command_tx.clone();
         let command = {
@@ -68,7 +66,7 @@ impl Manager {
                     stdout: result,
                 }))
                 .unwrap();
-            LOGGER.debug("run completed!");
+            debug!("run completed!");
         });
     }
 

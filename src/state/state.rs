@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use crate::{Cli, util::log::LOGGER};
+use crate::Cli;
 
 #[derive(Debug, Clone)]
 pub struct State {
@@ -22,8 +22,6 @@ impl State {
 impl State {
     pub fn can_run(&self, t: Instant) -> bool {
         let tick_diff = t - self.command.prev_tick;
-
-        LOGGER.debug(format!("runnung_count: {}", self.command.running_count));
 
         tick_diff.as_millis() > (self.global.interval * 1000.0) as u128
             && (self.command.running_count < self.global.concurrency)

@@ -6,6 +6,7 @@ use std::{
 
 use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
+use log::{debug, error};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout, Margin},
@@ -13,7 +14,7 @@ use ratatui::{
     widgets::{Block, Paragraph},
 };
 
-use crate::{error, state, util::log::LOGGER};
+use crate::{error::BodaResult, state};
 
 #[derive(Debug)]
 pub struct Manager {
@@ -53,7 +54,7 @@ impl Manager {
         })
     }
 
-    fn handle_crossterm_events(&self) -> error::BodaResult<()> {
+    fn handle_crossterm_events(&self) -> BodaResult<()> {
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => self.on_key_event(key),
             _ => {}
@@ -62,15 +63,15 @@ impl Manager {
     }
 
     fn on_key_event(&self, key: KeyEvent) {
-        LOGGER.debug("key event");
+        debug!("key event");
         match (key.modifiers, key.code) {
             (_, KeyCode::Esc | KeyCode::Char('q'))
             | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => {
-                LOGGER.debug("sending quit");
+                debug!("sending quit");
                 if let Err(_) = self.action_tx.send(state::action::Ui::Quit) {
-                    LOGGER.error("error on send")
+                    error!("error on send")
                 }
-                LOGGER.debug("sent quit");
+                debug!("sent quit");
             }
             (_, KeyCode::Char('j')) => {
                 self.action_tx.send(state::action::Ui::ScrollDown).unwrap();

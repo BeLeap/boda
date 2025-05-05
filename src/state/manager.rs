@@ -4,8 +4,9 @@ use std::{
 };
 
 use crossbeam_channel::select;
+use log::{debug, info};
 
-use crate::{Cli, util::log::LOGGER};
+use crate::Cli;
 
 use super::{action, state};
 
@@ -37,7 +38,7 @@ impl Manager {
 
                             let state = self.state.read().unwrap();
                             if state.global.running == false {
-                                LOGGER.info("stopping state manager..");
+                                info!("stopping state manager..");
                                 break;
                             }
                         }
@@ -56,7 +57,7 @@ impl Manager {
         let mut state = self.state.write().unwrap();
         match ui_action {
             action::Ui::Quit => {
-                LOGGER.debug("received quit");
+                debug!("received quit");
 
                 state.global.running = false;
             }
