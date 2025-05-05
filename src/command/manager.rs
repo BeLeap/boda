@@ -40,38 +40,39 @@ impl Manager {
         )
     }
 
+    pub fn execute(&self, t: Instant, state: &Arc<RwLock<state::State>>) {
+        LOGGER.debug("run!");
+        let shell = self.shell.clone();
+        let command_tx = self.command_tx.clone();
+        let command = {
+            let state = state.read().unwrap();
+            state.global.command.clone()
+        };
+
+        thread::spawn(move || {
+            command_tx.send(action::Command::StartRun(t)).unwrap();
+            let now = chrono::Local::now();
+
+            let command = command.join(" ");
+            let output = Command::new(shell).arg("-c").arg(command).output().unwrap();
+
+            let result = String::from_utf8_lossy(&output.stdout).to_string();
+
+            command_tx
+                .send(action::Command::RunResult(CommandResult {
+                    timestamp: now,
+                    stdout: result,
+                }))
+                .unwrap();
+            LOGGER.debug("run completed!");
+        });
+    }
+
     pub fn run(self, state: Arc<RwLock<state::State>>) -> JoinHandle<()> {
         thread::spawn(move || {
             let ticker = tick(Duration::from_millis(100));
-
-            let run = |t: Instant| {
-                LOGGER.debug("run!");
-                let shell = self.shell.clone();
-                let command_tx = self.command_tx.clone();
-                let command = {
-                    let state = state.read().unwrap();
-                    state.global.command.clone()
-                };
-
-                thread::spawn(move || {
-                    command_tx.send(action::Command::StartRun(t)).unwrap();
-                    let now = chrono::Local::now();
-
-                    let command = command.join(" ");
-                    let output = Command::new(shell).arg("-c").arg(command).output().unwrap();
-
-                    let result = String::from_utf8_lossy(&output.stdout).to_string();
-
-                    command_tx
-                        .send(action::Command::RunResult(CommandResult {
-                            timestamp: now,
-                            stdout: result,
-                        }))
-                        .unwrap();
-                    LOGGER.debug("run completed!");
-                });
-            };
-            run(Instant::now());
+            // NOTE: Run at first
+            self.execute(Instant::now(), &state);
 
             loop {
                 select! {
@@ -91,7 +92,7 @@ impl Manager {
                             };
 
                             if can_run {
-                                run(t);
+                                self.execute(t, &state);
                             }
                         }
                     }
