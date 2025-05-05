@@ -74,7 +74,7 @@ impl Manager {
             };
             let command = {
                 let state = state.read().unwrap();
-                state.command.clone()
+                state.global.command.clone()
             };
             run(command);
 
@@ -84,7 +84,7 @@ impl Manager {
                         if let Ok(t) = ticker_recv {
                             {
                                 let state = state.read().unwrap();
-                                if !state.running {
+                                if !state.global.running {
                                     break;
                                 }
                             }
@@ -95,7 +95,7 @@ impl Manager {
 
                             let (interval, concurrency) = {
                                 let state = state.read().unwrap();
-                                (state.interval, state.concurrency)
+                                (state.global.interval, state.global.concurrency)
                             };
                             let now_running = {
                                 let running_cnt = running_cnt.read().unwrap();
@@ -115,7 +115,7 @@ impl Manager {
                                 }
                                 let command = {
                                     let state = state.read().unwrap();
-                                    state.command.clone()
+                                    state.global.command.clone()
                                 };
                                 run(command);
                                 prev_tick = t;

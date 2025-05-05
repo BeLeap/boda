@@ -38,7 +38,7 @@ impl Manager {
                 select! {
                     recv(ticker) -> _ => {
                         let state = state.read().unwrap();
-                        if !state.running {
+                        if !state.global.running {
                             cleanup_terminal();
                             break;
                         }
@@ -96,7 +96,7 @@ impl Manager {
         .split(chunks[0]);
 
         frame.render_widget(
-            Paragraph::new(format!("{}", state.interval)).block(
+            Paragraph::new(format!("{}", state.global.interval)).block(
                 Block::bordered()
                     .border_style(Style::new().gray())
                     .title("Every")
@@ -105,7 +105,7 @@ impl Manager {
             heading_chunks[0],
         );
         frame.render_widget(
-            Paragraph::new(state.command.join(" ")).block(
+            Paragraph::new(state.global.command.join(" ")).block(
                 Block::bordered()
                     .border_style(Style::new().gray())
                     .title("Command")
@@ -114,7 +114,7 @@ impl Manager {
             heading_chunks[1],
         );
         frame.render_widget(
-            Paragraph::new(format!("{}", state.result.timestamp)).block(
+            Paragraph::new(format!("{}", state.global.result.timestamp)).block(
                 Block::bordered()
                     .border_style(Style::new().gray())
                     .title("Timestamp")
@@ -124,8 +124,16 @@ impl Manager {
         );
 
         frame.render_widget(
-            Paragraph::new(state.result.stdout.clone().split("\r").collect::<String>())
-                .scroll(((state.ui.vertical_scroll as u16), 0)),
+            Paragraph::new(
+                state
+                    .global
+                    .result
+                    .stdout
+                    .clone()
+                    .split("\r")
+                    .collect::<String>(),
+            )
+            .scroll(((state.ui.vertical_scroll as u16), 0)),
             chunks[1].inner(Margin {
                 horizontal: 1,
                 vertical: 0,

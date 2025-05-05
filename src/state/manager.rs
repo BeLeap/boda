@@ -36,7 +36,7 @@ impl Manager {
                             self.handle_ui_action(action);
 
                             let state = self.state.read().unwrap();
-                            if state.running == false {
+                            if state.global.running == false {
                                 LOGGER.info("stopping state manager..");
                                 break;
                             }
@@ -58,7 +58,7 @@ impl Manager {
             action::Ui::Quit => {
                 LOGGER.debug("received quit");
 
-                state.running = false;
+                state.global.running = false;
             }
             action::Ui::ScrollUp => {
                 if state.ui.vertical_scroll > 0 {
@@ -75,7 +75,7 @@ impl Manager {
         let mut state = self.state.write().unwrap();
         match command_action {
             action::Command::Append(command_result) => {
-                state.result = command_result;
+                state.global.result = command_result;
             }
         }
     }
