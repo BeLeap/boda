@@ -44,10 +44,14 @@ impl Manager {
         thread::spawn(move || {
             let ticker = tick(Duration::from_millis(100));
 
-            let run = |t: Instant, command: Vec<String>| {
+            let run = |t: Instant| {
                 LOGGER.debug("run!");
                 let shell = self.shell.clone();
                 let command_tx = self.command_tx.clone();
+                let command = {
+                    let state = state.read().unwrap();
+                    state.global.command.clone()
+                };
 
                 thread::spawn(move || {
                     command_tx.send(action::Command::StartRun(t)).unwrap();
@@ -67,11 +71,7 @@ impl Manager {
                     LOGGER.debug("run completed!");
                 });
             };
-            let command = {
-                let state = state.read().unwrap();
-                state.global.command.clone()
-            };
-            run(Instant::now(), command);
+            run(Instant::now());
 
             loop {
                 select! {
@@ -91,13 +91,7 @@ impl Manager {
                             };
 
                             if can_run {
-                                LOGGER.debug("prepare run");
-
-                                let command = {
-                                    let state = state.read().unwrap();
-                                    state.global.command.clone()
-                                };
-                                run(t, command);
+                                run(t);
                             }
                         }
                     }
