@@ -1,4 +1,5 @@
 use std::{
+    path::PathBuf,
     sync::{Arc, RwLock},
     thread,
 };
@@ -16,8 +17,8 @@ pub struct Manager {
 }
 
 impl Manager {
-    pub fn new(cli: Cli) -> Manager {
-        let state = state::State::new(cli);
+    pub fn new(cli: Cli, filepath: &PathBuf) -> Manager {
+        let state = state::State::new(cli, filepath);
 
         Manager {
             state: Arc::new(RwLock::new(state)),

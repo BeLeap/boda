@@ -23,7 +23,10 @@ fn main() -> error::BodaResult<()> {
     crate::util::log::setup();
     let cli = Cli::parse();
 
-    let state_manager = state::manager::Manager::new(cli);
+    let tempdir = std::env::temp_dir();
+    let filepath = tempdir.join("backup.sqlite");
+
+    let state_manager = state::manager::Manager::new(cli, &filepath);
     let (command_manger, command_action_rx) = command::manager::Manager::new();
     let (ui_manager, ui_action_rx) = ui::manager::Manager::new();
 
@@ -35,5 +38,6 @@ fn main() -> error::BodaResult<()> {
     for handle in handles {
         handle.join().expect("unable to join thread");
     }
+    println!("Backup at {:?}", filepath);
     Ok(())
 }

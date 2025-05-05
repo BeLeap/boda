@@ -1,5 +1,6 @@
 use std::{
     fs::File,
+    path::PathBuf,
     sync::{Arc, Mutex},
     time::Instant,
 };
@@ -17,9 +18,9 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(cli: Cli) -> State {
+    pub fn new(cli: Cli, filepath: &PathBuf) -> State {
         State {
-            global: Global::new(cli),
+            global: Global::new(cli, filepath),
             ui: Ui::default(),
             command: Command::default(),
         }
@@ -47,13 +48,11 @@ pub struct Global {
 }
 
 impl Global {
-    pub fn new(cli: Cli) -> Global {
-        let tempdir = std::env::temp_dir();
-        let path = tempdir.join("backup.sqlite");
-        File::create(&path).unwrap();
-        info!("db file at {:?}", path);
+    pub fn new(cli: Cli, filepath: &PathBuf) -> Global {
+        File::create(filepath).unwrap();
+        info!("db file at {:?}", filepath);
         let conn = Connection::open_with_flags(
-            path,
+            filepath,
             rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE | rusqlite::OpenFlags::SQLITE_OPEN_CREATE,
         )
         .unwrap();
