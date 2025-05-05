@@ -65,11 +65,17 @@ impl Global {
         )
         .unwrap();
 
+        let interval = if cli.interval < 0.5 {
+            0.5
+        } else {
+            cli.interval
+        };
+
         Global {
             running: true,
 
             command: cli.command,
-            interval: cli.interval,
+            interval,
             concurrency: cli.concurrency,
 
             conn: Arc::new(Mutex::new(conn)),

@@ -113,7 +113,12 @@ impl Manager {
         let content_chunks = Layout::horizontal(layout).split(rows[1]);
 
         frame.render_widget(
-            Paragraph::new(format!("{}", state.global.interval)).block(
+            Paragraph::new(if state.global.interval < 1.0 {
+                format!("{}ms", (state.global.interval * 1000.0) as u128)
+            } else {
+                format!("{}s", state.global.interval)
+            })
+            .block(
                 Block::bordered()
                     .border_style(Style::new().gray())
                     .title("Every")
