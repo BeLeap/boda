@@ -119,7 +119,7 @@ impl Global {
                 return Some(result);
             }
         }
-        panic!("result not exists");
+        None
     }
 }
 
