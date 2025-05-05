@@ -4,22 +4,23 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 
-static LOGGER: LazyLock<Logger> = LazyLock::new(|| Logger::new("/tmp/boda.log"));
+static LOGGER: LazyLock<FileLogger> = LazyLock::new(|| FileLogger::new("/tmp/boda.log"));
 
 #[derive(Debug)]
-pub struct Logger {
+pub struct FileLogger {
     file: Mutex<File>,
 }
 
-impl Logger {
-    fn new(path: &'static str) -> Logger {
+impl FileLogger {
+    fn new(path: &'static str) -> FileLogger {
         let file = OpenOptions::new()
             .create(true)
-            .append(true)
+            .write(true)
+            .truncate(true)
             .open(path)
             .expect("cannot open log file");
 
-        return Logger {
+        return FileLogger {
             file: Mutex::new(file),
         };
     }
@@ -32,6 +33,8 @@ impl Logger {
     }
 }
 
+struct Logger;
+
 impl log::Log for Logger {
     fn enabled(&self, _: &log::Metadata) -> bool {
         true
@@ -42,4 +45,10 @@ impl log::Log for Logger {
     }
 
     fn flush(&self) {}
+}
+
+pub fn setup() {
+    log::set_logger(&Logger)
+        .map(|()| log::set_max_level(log::LevelFilter::Trace))
+        .unwrap();
 }

@@ -20,6 +20,7 @@ struct Cli {
 }
 
 fn main() -> error::BodaResult<()> {
+    crate::util::log::setup();
     let cli = Cli::parse();
 
     let state_manager = state::manager::Manager::new(cli);
