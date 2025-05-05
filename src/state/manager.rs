@@ -74,14 +74,12 @@ impl Manager {
     fn handle_command_action(&self, command_action: action::Command) {
         let mut state = self.state.write().unwrap();
         match command_action {
-            action::Command::Append(command_result) => {
+            action::Command::RunResult(command_result) => {
                 state.global.result = command_result;
-            }
-            action::Command::IncreaseRunning => {
-                state.command.running_count += 1;
-            }
-            action::Command::DecreaseRunning => {
                 state.command.running_count -= 1;
+            }
+            action::Command::StartRun => {
+                state.command.running_count += 1;
             }
         }
     }
