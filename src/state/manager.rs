@@ -76,7 +76,7 @@ impl Manager {
         let mut state = self.state.write().unwrap();
         match command_action {
             action::Command::RunResult(command_result) => {
-                state.global.result = command_result;
+                state.global.append_command_result(command_result);
                 state.command.running_count -= 1;
             }
             action::Command::StartRun(t) => {
