@@ -85,10 +85,7 @@ impl Manager {
     }
 
     fn render(&mut self, frame: &mut Frame, state: &state::state::State) {
-        let result = match state.global.last_command_result() {
-            Some(result) => result,
-            None => return,
-        };
+        let result = state.global.last_command_result();
 
         let area = frame.area();
         let chunks =
@@ -120,7 +117,11 @@ impl Manager {
             heading_chunks[1],
         );
         frame.render_widget(
-            Paragraph::new(format!("{}", result.timestamp)).block(
+            Paragraph::new(match &result {
+                Some(r) => format!("{}", r.timestamp),
+                None => "Running".to_string(),
+            })
+            .block(
                 Block::bordered()
                     .border_style(Style::new().gray())
                     .title("Timestamp")
@@ -128,6 +129,11 @@ impl Manager {
             ),
             heading_chunks[2],
         );
+
+        let result = match result {
+            Some(r) => r,
+            None => return,
+        };
 
         frame.render_widget(
             Paragraph::new(result.stdout.clone().split("\r").collect::<String>())
