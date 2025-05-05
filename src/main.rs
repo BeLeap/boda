@@ -20,7 +20,7 @@ struct Cli {
 }
 
 fn main() -> error::BodaResult<()> {
-    crate::util::log::setup();
+    util::log::setup();
     let cli = Cli::parse();
 
     let tempdir = std::env::temp_dir();
