@@ -54,7 +54,11 @@ impl Manager {
             let now = chrono::Local::now();
 
             let command = command.join(" ");
-            let output = Command::new(shell).arg("-c").arg(command).output().unwrap();
+            let output = Command::new(shell)
+                .args(["-i", "-c"])
+                .arg(command)
+                .output()
+                .unwrap();
 
             let result = String::from_utf8_lossy(&output.stdout).to_string();
 
