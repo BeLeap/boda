@@ -1,6 +1,6 @@
 # Boda
 
-A opinionated replacement of watch.
+An opinionated replacement of watch.
 
 ## Acknowledgement
 
