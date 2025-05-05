@@ -51,11 +51,7 @@ impl Global {
     pub fn new(cli: Cli, filepath: &PathBuf) -> Global {
         File::create(filepath).unwrap();
         info!("db file at {:?}", filepath);
-        let conn = Connection::open_with_flags(
-            filepath,
-            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE | rusqlite::OpenFlags::SQLITE_OPEN_CREATE,
-        )
-        .unwrap();
+        let conn = Connection::open(filepath).unwrap();
 
         conn.execute(
             "CREATE TABLE command_result (
