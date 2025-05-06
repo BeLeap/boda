@@ -15,10 +15,7 @@ use ratatui::{
     widgets::{Block, Paragraph},
 };
 
-use crate::{
-    error::BodaResult,
-    state::{self, state::CommandResult},
-};
+use crate::{error::BodaResult, state};
 
 #[derive(Debug)]
 pub struct Manager {
