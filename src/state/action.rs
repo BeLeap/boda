@@ -9,6 +9,9 @@ pub enum Ui {
     ToggleShowHistory,
     ToggleRelativeHistory,
 
+    SelectNext,
+    SelectPrev,
+
     ToggleShowHelp,
 
     ScrollDown,

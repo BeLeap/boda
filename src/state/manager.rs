@@ -79,6 +79,25 @@ impl Manager {
             action::Ui::ToggleShowHelp => {
                 state.ui.show_help = !state.ui.show_help;
             }
+            action::Ui::SelectNext => match state.ui.target_command {
+                state::TargetCommand::Latest => {
+                    state.ui.target_command =
+                        state::TargetCommand::Target(state.global.get_history()[0].id);
+                }
+                state::TargetCommand::Target(id) => {
+                    state.ui.target_command = state::TargetCommand::Target(id - 1);
+                }
+            },
+            action::Ui::SelectPrev => match state.ui.target_command {
+                state::TargetCommand::Latest => {}
+                state::TargetCommand::Target(id) => {
+                    if state.global.get_history()[0].id == id {
+                        state.ui.target_command = state::TargetCommand::Latest
+                    } else {
+                        state.ui.target_command = state::TargetCommand::Target(id + 1)
+                    }
+                }
+            },
         }
     }
 

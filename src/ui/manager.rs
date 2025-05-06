@@ -11,14 +11,17 @@ use log::{debug, error};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout, Margin},
-    style::{Style, Stylize},
+    style::{Color, Style, Stylize},
     text::Text,
     widgets::{Block, Paragraph},
 };
 
 use crate::{
     error::BodaResult,
-    state::{self, state::CommandResult},
+    state::{
+        self,
+        state::{CommandResult, TargetCommand},
+    },
     util,
 };
 
@@ -100,6 +103,12 @@ impl Manager {
                     .send(state::action::Ui::ToggleShowHelp)
                     .unwrap();
             }
+            (_, KeyCode::Char('p')) => {
+                self.action_tx.send(state::action::Ui::SelectPrev).unwrap();
+            }
+            (_, KeyCode::Char('n')) => {
+                self.action_tx.send(state::action::Ui::SelectNext).unwrap();
+            }
             // Add other key handlers here.
             _ => {}
         }
@@ -124,7 +133,9 @@ r: Show History in relative",
             return;
         }
 
-        let result = state.global.last_command_result();
+        let result = state
+            .global
+            .get_target_command_result(&state.ui.target_command);
         let show_history = state.ui.show_history;
 
         let area = frame.area();
@@ -221,6 +232,13 @@ r: Show History in relative",
             }));
 
             for (idx, summary) in history.iter().enumerate() {
+                if state.ui.target_command.is_target(summary) {
+                    frame.render_widget(
+                        Block::new().style(Style::default().bg(Color::DarkGray)),
+                        chunks[idx],
+                    );
+                }
+
                 let split = Layout::horizontal([Constraint::Min(1); 2]).split(chunks[idx]);
                 frame.render_widget(
                     Text::raw(if state.ui.relative_history {

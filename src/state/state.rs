@@ -110,7 +110,17 @@ impl Global {
         .unwrap();
     }
 
-    pub fn last_command_result(&self) -> Option<CommandResult> {
+    pub fn get_target_command_result(
+        &self,
+        target_command: &TargetCommand,
+    ) -> Option<CommandResult> {
+        match target_command {
+            TargetCommand::Latest => self.last_command_result(),
+            TargetCommand::Target(id) => self.get_command_result(*id),
+        }
+    }
+
+    fn last_command_result(&self) -> Option<CommandResult> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = match conn.prepare(
             "SELECT timestamp, stdout, stderr, status FROM command_result WHERE status IS NOT NULL ORDER BY id DESC LIMIT 1",
@@ -142,23 +152,57 @@ impl Global {
         None
     }
 
-    pub fn get_history(&self) -> Vec<CommandResultSummary> {
+    fn get_command_result(&self, id: u32) -> Option<CommandResult> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt =
-            match conn.prepare("SELECT timestamp, status FROM command_result ORDER BY id DESC") {
-                Ok(stmt) => stmt,
-                Err(e) => {
-                    error!("error on select: {}", e);
-                    return vec![];
-                }
-            };
+        let mut stmt = match conn.prepare(
+            "SELECT timestamp, stdout, stderr, status FROM command_result WHERE status IS NOT NULL AND id=?1 ORDER BY id DESC LIMIT 1",
+        ) {
+            Ok(stmt) => stmt,
+            Err(e) => {
+                error!("error on select: {}", e);
+                return None;
+            }
+        };
         let result_iter = stmt
-            .query_map([], |row| {
-                Ok(CommandResultSummary {
+            .query_map([id], |row| {
+                Ok(CommandResult {
                     timestamp: chrono::DateTime::from_timestamp_millis(row.get(0).unwrap())
                         .unwrap()
                         .into(),
-                    status: row.get(1).unwrap(),
+                    stdout: row.get(1).unwrap(),
+                    stderr: row.get(2).unwrap(),
+                    status: row.get(3).unwrap(),
+                })
+            })
+            .unwrap();
+
+        for result in result_iter {
+            if let Ok(result) = result {
+                return Some(result);
+            }
+        }
+        None
+    }
+
+    pub fn get_history(&self) -> Vec<CommandResultSummary> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = match conn
+            .prepare("SELECT id, timestamp, status FROM command_result ORDER BY id DESC")
+        {
+            Ok(stmt) => stmt,
+            Err(e) => {
+                error!("error on select: {}", e);
+                return vec![];
+            }
+        };
+        let result_iter = stmt
+            .query_map([], |row| {
+                Ok(CommandResultSummary {
+                    id: row.get(0).unwrap(),
+                    timestamp: chrono::DateTime::from_timestamp_millis(row.get(1).unwrap())
+                        .unwrap()
+                        .into(),
+                    status: row.get(2).unwrap(),
                 })
             })
             .unwrap();
@@ -177,6 +221,7 @@ pub struct CommandResult {
 }
 
 pub struct CommandResultSummary {
+    pub id: u32,
     pub timestamp: util::chrono::DateTime,
     pub status: Option<u8>,
 }
@@ -189,6 +234,23 @@ pub struct Ui {
     pub vertical_scroll: usize,
 
     pub show_help: bool,
+    pub target_command: TargetCommand,
+}
+
+#[derive(Debug, Clone, Default)]
+pub enum TargetCommand {
+    #[default]
+    Latest,
+    Target(u32),
+}
+
+impl TargetCommand {
+    pub fn is_target(&self, summary: &CommandResultSummary) -> bool {
+        match self {
+            TargetCommand::Latest => false,
+            TargetCommand::Target(id) => *id == summary.id,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
