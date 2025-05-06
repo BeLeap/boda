@@ -11,6 +11,7 @@ pub enum Ui {
 
     SelectNext,
     SelectPrev,
+    SelectLatest,
 
     ToggleShowHelp,
 

@@ -98,6 +98,9 @@ impl Manager {
                     }
                 }
             },
+            action::Ui::SelectLatest => {
+                state.ui.target_command = state::TargetCommand::Latest;
+            }
         }
     }
 

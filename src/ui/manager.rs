@@ -109,6 +109,11 @@ impl Manager {
             (_, KeyCode::Char('n')) => {
                 self.action_tx.send(state::action::Ui::SelectNext).unwrap();
             }
+            (_, KeyCode::Char('l')) => {
+                self.action_tx
+                    .send(state::action::Ui::SelectLatest)
+                    .unwrap();
+            }
             // Add other key handlers here.
             _ => {}
         }
@@ -125,7 +130,10 @@ q: Quit
 j: Scroll Down
 k: Scroll Up
 <Space>: Show History
-r: Show History in relative",
+r: Show History in relative
+p: Show previous
+n: Show next
+l: Show latest",
                 ),
                 frame.area(),
             );
