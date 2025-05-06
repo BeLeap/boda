@@ -18,10 +18,7 @@ use ratatui::{
 
 use crate::{
     error::BodaResult,
-    state::{
-        self,
-        state::{CommandResult, TargetCommand},
-    },
+    state::{self, state::CommandResult},
     util,
 };
 

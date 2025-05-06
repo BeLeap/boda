@@ -85,7 +85,8 @@ impl Manager {
                         state::TargetCommand::Target(state.global.get_history()[0].id);
                 }
                 state::TargetCommand::Target(id) => {
-                    state.ui.target_command = state::TargetCommand::Target(id - 1);
+                    let id = if id == 0 { 0 } else { id - 1 };
+                    state.ui.target_command = state::TargetCommand::Target(id);
                 }
             },
             action::Ui::SelectPrev => match state.ui.target_command {
