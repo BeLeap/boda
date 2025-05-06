@@ -4,22 +4,20 @@ use std::{
     time::Duration,
 };
 
-use chrono::Local;
 use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
 use log::{debug, error};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout, Margin},
-    style::{Style, Stylize},
-    text::Text,
+    style::{Color, Style, Stylize},
+    text::{Line, Span, Text},
     widgets::{Block, Paragraph},
 };
 
 use crate::{
     error::BodaResult,
     state::{self, state::CommandResult},
-    util,
 };
 
 #[derive(Debug)]
@@ -85,11 +83,6 @@ impl Manager {
             (_, KeyCode::Char('k')) => {
                 self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
             }
-            (_, KeyCode::Char('r')) => {
-                self.action_tx
-                    .send(state::action::Ui::ToggleRelativeHistory)
-                    .unwrap();
-            }
             (_, KeyCode::Char(' ')) => {
                 self.action_tx
                     .send(state::action::Ui::ToggleShowHistory)
@@ -98,6 +91,17 @@ impl Manager {
             (_, KeyCode::Char('?')) => {
                 self.action_tx
                     .send(state::action::Ui::ToggleShowHelp)
+                    .unwrap();
+            }
+            (_, KeyCode::Char('p')) => {
+                self.action_tx.send(state::action::Ui::SelectPrev).unwrap();
+            }
+            (_, KeyCode::Char('n')) => {
+                self.action_tx.send(state::action::Ui::SelectNext).unwrap();
+            }
+            (_, KeyCode::Char('l')) => {
+                self.action_tx
+                    .send(state::action::Ui::SelectLatest)
                     .unwrap();
             }
             // Add other key handlers here.
@@ -116,7 +120,9 @@ q: Quit
 j: Scroll Down
 k: Scroll Up
 <Space>: Show History
-r: Show History in relative",
+p: Show previous
+n: Show next
+l: Show latest",
                 ),
                 frame.area(),
             );
@@ -124,7 +130,9 @@ r: Show History in relative",
             return;
         }
 
-        let result = state.global.last_command_result();
+        let result = state
+            .global
+            .get_target_command_result(&state.ui.target_command);
         let show_history = state.ui.show_history;
 
         let area = frame.area();
@@ -182,23 +190,26 @@ r: Show History in relative",
             heading_chunks[2],
         );
 
-        if let Some(CommandResult {
-            stdout: Some(stdout),
-            stderr: Some(stderr),
-            status: Some(status),
-            ..
-        }) = result
-        {
-            let (content, style) = if status == 0 {
-                (stdout, Style::new())
-            } else {
-                (stderr, Style::new().red())
-            };
+        if let Some(result) = result {
+            let (content, style) = (
+                Text::from(
+                    result
+                        .get_content()
+                        .iter()
+                        .map(|line| Line::from(line.clone()))
+                        .collect::<Vec<Line>>(),
+                ),
+                match result.status {
+                    Some(0) => Style::default(),
+                    Some(_) => Style::default().fg(Color::Red),
+                    None => Style::default().fg(Color::Gray),
+                },
+            );
 
             frame.render_widget(
                 Paragraph::new(content)
                     .style(style)
-                    .scroll(((state.ui.vertical_scroll as u16), 0)),
+                    .scroll((state.ui.vertical_scroll, 0)),
                 content_chunks[0].inner(Margin {
                     horizontal: 1,
                     vertical: 0,
@@ -213,32 +224,47 @@ r: Show History in relative",
             );
 
             let history = state.global.get_history();
+            let lines = history
+                .iter()
+                .map(|summary| {
+                    let timestamp = (
+                        format!("{}", summary.timestamp.time()),
+                        if state.ui.target_command.is_target(summary) {
+                            Style::default().bg(Color::DarkGray)
+                        } else {
+                            Style::default()
+                        },
+                    );
+                    let status = match summary.status {
+                        Some(0) => ("0".to_string(), Style::default().fg(Color::Green)),
+                        Some(s) => (format!("{}", s), Style::default().fg(Color::Red)),
+                        None => ("Running".to_string(), Style::default().fg(Color::Gray)),
+                    };
 
-            let constraints = vec![Constraint::Length(1); history.len()];
-            let chunks = Layout::vertical(constraints).split(content_chunks[1].inner(Margin {
-                horizontal: 1,
-                vertical: 1,
-            }));
+                    Line::from(vec![
+                        Span::styled(timestamp.0, timestamp.1),
+                        Span::raw(" "),
+                        Span::styled(status.0, status.1),
+                    ])
+                })
+                .collect::<Vec<Line>>();
+            let text = Text::from(lines);
 
-            for (idx, summary) in history.iter().enumerate() {
-                let split = Layout::horizontal([Constraint::Min(1); 2]).split(chunks[idx]);
-                frame.render_widget(
-                    Text::raw(if state.ui.relative_history {
-                        util::chrono::human_readable_delta(-(Local::now() - summary.timestamp))
-                    } else {
-                        format!("{}", summary.timestamp.time())
-                    }),
-                    split[0],
-                );
+            let scroll_offset = match state.ui.target_command {
+                state::state::TargetCommand::Latest => 0,
+                state::state::TargetCommand::Target(id) => {
+                    let height = content_chunks[1].height.saturating_sub(2); // Margin 고려
+                    (history.len() as u16 - id).saturating_sub(height / 2)
+                }
+            };
 
-                let (code, style) = match summary.status {
-                    Some(0) => ("0".to_string(), Style::new().green()),
-                    Some(s) => (format!("{}", s), Style::new().red()),
-                    None => ("Running".to_string(), Style::new().gray()),
-                };
-
-                frame.render_widget(Text::raw(code).style(style), split[1]);
-            }
+            frame.render_widget(
+                Paragraph::new(text).scroll((scroll_offset, 0)),
+                content_chunks[1].inner(Margin {
+                    horizontal: 1,
+                    vertical: 1,
+                }),
+            );
         }
     }
 }

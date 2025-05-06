@@ -68,16 +68,48 @@ impl Manager {
                 }
             }
             action::Ui::ScrollDown => {
+                let length = match state
+                    .global
+                    .get_target_command_result(&state.ui.target_command)
+                {
+                    Some(r) => r.get_content().len(),
+                    _ => return,
+                };
+
+                if (length - 1) as u16 <= state.ui.vertical_scroll {
+                    return;
+                }
+
                 state.ui.vertical_scroll += 1;
             }
             action::Ui::ToggleShowHistory => {
                 state.ui.show_history = !state.ui.show_history;
             }
-            action::Ui::ToggleRelativeHistory => {
-                state.ui.relative_history = !state.ui.relative_history;
-            }
             action::Ui::ToggleShowHelp => {
                 state.ui.show_help = !state.ui.show_help;
+            }
+            action::Ui::SelectNext => match state.ui.target_command {
+                state::TargetCommand::Latest => {
+                    state.ui.target_command =
+                        state::TargetCommand::Target(state.global.get_history()[0].id);
+                }
+                state::TargetCommand::Target(id) => {
+                    let id = if id == 0 { 0 } else { id - 1 };
+                    state.ui.target_command = state::TargetCommand::Target(id);
+                }
+            },
+            action::Ui::SelectPrev => match state.ui.target_command {
+                state::TargetCommand::Latest => {}
+                state::TargetCommand::Target(id) => {
+                    if state.global.get_history()[0].id == id {
+                        state.ui.target_command = state::TargetCommand::Latest
+                    } else {
+                        state.ui.target_command = state::TargetCommand::Target(id + 1)
+                    }
+                }
+            },
+            action::Ui::SelectLatest => {
+                state.ui.target_command = state::TargetCommand::Latest;
             }
         }
     }
