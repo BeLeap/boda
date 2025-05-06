@@ -12,7 +12,7 @@ use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout, Margin},
     style::{Color, Style, Stylize},
-    text::Text,
+    text::{Line, Span, Text},
     widgets::{Block, Paragraph},
 };
 
@@ -229,39 +229,39 @@ l: Show latest",
             );
 
             let history = state.global.get_history();
-
-            let constraints = vec![Constraint::Length(1); history.len()];
-            let chunks = Layout::vertical(constraints).split(content_chunks[1].inner(Margin {
-                horizontal: 1,
-                vertical: 1,
-            }));
-
-            for (idx, summary) in history.iter().enumerate() {
-                if state.ui.target_command.is_target(summary) {
-                    frame.render_widget(
-                        Block::new().style(Style::default().bg(Color::DarkGray)),
-                        chunks[idx],
+            let lines = history
+                .iter()
+                .map(|summary| {
+                    let timestamp = (
+                        format!("{}", summary.timestamp.time()),
+                        if state.ui.target_command.is_target(summary) {
+                            Style::default().bg(Color::DarkGray)
+                        } else {
+                            Style::default()
+                        },
                     );
-                }
+                    let status = match summary.status {
+                        Some(0) => ("0".to_string(), Style::default().fg(Color::Green)),
+                        Some(s) => (format!("{}", s), Style::default().fg(Color::Red)),
+                        None => ("Running".to_string(), Style::default().fg(Color::Gray)),
+                    };
 
-                let split = Layout::horizontal([Constraint::Min(1); 2]).split(chunks[idx]);
-                frame.render_widget(
-                    Text::raw(if state.ui.relative_history {
-                        util::chrono::human_readable_delta(-(Local::now() - summary.timestamp))
-                    } else {
-                        format!("{}", summary.timestamp.time())
-                    }),
-                    split[0],
-                );
+                    Line::from(vec![
+                        Span::styled(timestamp.0, timestamp.1),
+                        Span::raw(" "),
+                        Span::styled(status.0, status.1),
+                    ])
+                })
+                .collect::<Vec<Line>>();
+            let text = Text::from(lines);
 
-                let (code, style) = match summary.status {
-                    Some(0) => ("0".to_string(), Style::new().green()),
-                    Some(s) => (format!("{}", s), Style::new().red()),
-                    None => ("Running".to_string(), Style::new().gray()),
-                };
-
-                frame.render_widget(Text::raw(code).style(style), split[1]);
-            }
+            frame.render_widget(
+                Paragraph::new(text),
+                content_chunks[1].inner(Margin {
+                    horizontal: 1,
+                    vertical: 1,
+                }),
+            );
         }
     }
 }
