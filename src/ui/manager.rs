@@ -95,12 +95,35 @@ impl Manager {
                     .send(state::action::Ui::ToggleShowHistory)
                     .unwrap();
             }
+            (_, KeyCode::Char('?')) => {
+                self.action_tx
+                    .send(state::action::Ui::ToggleShowHelp)
+                    .unwrap();
+            }
             // Add other key handlers here.
             _ => {}
         }
     }
 
     fn render(&mut self, frame: &mut Frame, state: &state::state::State) {
+        if state.ui.show_help {
+            frame.render_widget(
+                Paragraph::new(
+                    "Keybindings
+
+?: Help
+q: Quit
+j: Scroll Down
+k: Scroll Up
+<Space>: Show History
+r: Show History in relative",
+                ),
+                frame.area(),
+            );
+
+            return;
+        }
+
         let result = state.global.last_command_result();
         let show_history = state.ui.show_history;
 

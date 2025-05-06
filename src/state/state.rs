@@ -185,7 +185,10 @@ pub struct CommandResultSummary {
 pub struct Ui {
     pub show_history: bool,
     pub relative_history: bool,
+
     pub vertical_scroll: usize,
+
+    pub show_help: bool,
 }
 
 #[derive(Debug, Clone)]

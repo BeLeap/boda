@@ -76,6 +76,9 @@ impl Manager {
             action::Ui::ToggleRelativeHistory => {
                 state.ui.relative_history = !state.ui.relative_history;
             }
+            action::Ui::ToggleShowHelp => {
+                state.ui.show_help = !state.ui.show_help;
+            }
         }
     }
 
