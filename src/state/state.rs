@@ -220,6 +220,29 @@ pub struct CommandResult {
     pub status: Option<u8>,
 }
 
+impl CommandResult {
+    fn lines(input: &Option<String>) -> Vec<String> {
+        if let Some(input) = input {
+            input.lines().map(|line| line.to_string()).collect()
+        } else {
+            vec![]
+        }
+    }
+
+    pub fn get_content(&self) -> Vec<String> {
+        match self.status {
+            Some(status) => {
+                if status == 0 {
+                    CommandResult::lines(&self.stdout)
+                } else {
+                    CommandResult::lines(&self.stderr)
+                }
+            }
+            None => vec!["Running".to_string()],
+        }
+    }
+}
+
 pub struct CommandResultSummary {
     pub id: u16,
     pub timestamp: util::chrono::DateTime,

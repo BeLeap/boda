@@ -68,6 +68,18 @@ impl Manager {
                 }
             }
             action::Ui::ScrollDown => {
+                let length = match state
+                    .global
+                    .get_target_command_result(&state.ui.target_command)
+                {
+                    Some(r) => r.get_content().len(),
+                    _ => return,
+                };
+
+                if (length - 1) as u16 <= state.ui.vertical_scroll {
+                    return;
+                }
+
                 state.ui.vertical_scroll += 1;
             }
             action::Ui::ToggleShowHistory => {

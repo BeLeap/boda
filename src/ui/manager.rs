@@ -190,18 +190,21 @@ l: Show latest",
             heading_chunks[2],
         );
 
-        if let Some(CommandResult {
-            stdout: Some(stdout),
-            stderr: Some(stderr),
-            status: Some(status),
-            ..
-        }) = result
-        {
-            let (content, style) = if status == 0 {
-                (stdout, Style::new())
-            } else {
-                (stderr, Style::new().red())
-            };
+        if let Some(result) = result {
+            let (content, style) = (
+                Text::from(
+                    result
+                        .get_content()
+                        .iter()
+                        .map(|line| Line::from(line.clone()))
+                        .collect::<Vec<Line>>(),
+                ),
+                match result.status {
+                    Some(0) => Style::default(),
+                    Some(_) => Style::default().fg(Color::Red),
+                    None => Style::default().fg(Color::Gray),
+                },
+            );
 
             frame.render_widget(
                 Paragraph::new(content)
