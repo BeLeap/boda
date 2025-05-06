@@ -206,7 +206,7 @@ l: Show latest",
             frame.render_widget(
                 Paragraph::new(content)
                     .style(style)
-                    .scroll(((state.ui.vertical_scroll as u16), 0)),
+                    .scroll((state.ui.vertical_scroll, 0)),
                 content_chunks[0].inner(Margin {
                     horizontal: 1,
                     vertical: 0,
@@ -247,8 +247,16 @@ l: Show latest",
                 .collect::<Vec<Line>>();
             let text = Text::from(lines);
 
+            let scroll_offset = match state.ui.target_command {
+                state::state::TargetCommand::Latest => 0,
+                state::state::TargetCommand::Target(id) => {
+                    let height = content_chunks[1].height.saturating_sub(2); // Margin 고려
+                    (history.len() as u16 - id).saturating_sub(height / 2)
+                }
+            };
+
             frame.render_widget(
-                Paragraph::new(text),
+                Paragraph::new(text).scroll((scroll_offset, 0)),
                 content_chunks[1].inner(Margin {
                     horizontal: 1,
                     vertical: 1,

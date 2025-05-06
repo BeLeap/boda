@@ -152,7 +152,7 @@ impl Global {
         None
     }
 
-    fn get_command_result(&self, id: u32) -> Option<CommandResult> {
+    fn get_command_result(&self, id: u16) -> Option<CommandResult> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = match conn.prepare(
             "SELECT timestamp, stdout, stderr, status FROM command_result WHERE status IS NOT NULL AND id=?1 ORDER BY id DESC LIMIT 1",
@@ -221,7 +221,7 @@ pub struct CommandResult {
 }
 
 pub struct CommandResultSummary {
-    pub id: u32,
+    pub id: u16,
     pub timestamp: util::chrono::DateTime,
     pub status: Option<u8>,
 }
@@ -230,7 +230,7 @@ pub struct CommandResultSummary {
 pub struct Ui {
     pub show_history: bool,
 
-    pub vertical_scroll: usize,
+    pub vertical_scroll: u16,
 
     pub show_help: bool,
     pub target_command: TargetCommand,
@@ -240,7 +240,7 @@ pub struct Ui {
 pub enum TargetCommand {
     #[default]
     Latest,
-    Target(u32),
+    Target(u16),
 }
 
 impl TargetCommand {
