@@ -4,7 +4,6 @@ use std::{
     time::Duration,
 };
 
-use chrono::Local;
 use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
 use log::{debug, error};
@@ -19,7 +18,6 @@ use ratatui::{
 use crate::{
     error::BodaResult,
     state::{self, state::CommandResult},
-    util,
 };
 
 #[derive(Debug)]
@@ -85,11 +83,6 @@ impl Manager {
             (_, KeyCode::Char('k')) => {
                 self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
             }
-            (_, KeyCode::Char('r')) => {
-                self.action_tx
-                    .send(state::action::Ui::ToggleRelativeHistory)
-                    .unwrap();
-            }
             (_, KeyCode::Char(' ')) => {
                 self.action_tx
                     .send(state::action::Ui::ToggleShowHistory)
@@ -127,7 +120,6 @@ q: Quit
 j: Scroll Down
 k: Scroll Up
 <Space>: Show History
-r: Show History in relative
 p: Show previous
 n: Show next
 l: Show latest",

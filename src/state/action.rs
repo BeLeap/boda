@@ -7,7 +7,6 @@ pub enum Ui {
     Quit,
 
     ToggleShowHistory,
-    ToggleRelativeHistory,
 
     SelectNext,
     SelectPrev,
