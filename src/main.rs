@@ -24,7 +24,8 @@ fn main() -> error::BodaResult<()> {
     let cli = Cli::parse();
 
     let tempdir = std::env::temp_dir();
-    let filepath = tempdir.join("backup.sqlite");
+    let tempfile = ulid::Ulid::new().to_string();
+    let filepath = tempdir.join(format!("{}.sqlite", tempfile));
 
     let state_manager = state::manager::Manager::new(cli, &filepath);
     let (command_manger, command_action_rx) = command::manager::Manager::new();
