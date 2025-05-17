@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use crossbeam_channel::{select, tick, unbounded};
+use crossbeam_channel::{bounded, select, tick};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
 use log::{debug, error};
 use ratatui::{
@@ -24,7 +24,7 @@ pub struct Manager {
 
 impl Manager {
     pub fn new() -> (Manager, crossbeam_channel::Receiver<state::action::Ui>) {
-        let (tx, rx) = unbounded::<state::action::Ui>();
+        let (tx, rx) = bounded::<state::action::Ui>(3);
 
         (Manager { action_tx: tx }, rx)
     }
