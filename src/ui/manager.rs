@@ -12,7 +12,7 @@ use ratatui::{
     layout::{Constraint, Layout, Margin},
     style::{Color, Style, Stylize},
     text::{Line, Span, Text},
-    widgets::{Block, Paragraph},
+    widgets::{Block, Paragraph, Wrap},
 };
 
 use crate::{error::BodaResult, state};
@@ -206,6 +206,7 @@ l: Show latest",
             frame.render_widget(
                 Paragraph::new(content)
                     .style(style)
+                    .wrap(Wrap { trim: false })
                     .scroll((state.ui.vertical_scroll, 0)),
                 content_chunks[0].inner(Margin {
                     horizontal: 1,
