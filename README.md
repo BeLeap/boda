@@ -7,6 +7,7 @@ The name *Boda* (보다) comes from the Korean verb meaning "to watch" or "to se
 
 - Navigate between historical outputs.
 - Persist command output into a SQLite database.
+- Run commands **concurrently**.
 
 ## Installation
 
