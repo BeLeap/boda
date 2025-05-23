@@ -16,7 +16,7 @@ The name *Boda* (보다) comes from the Korean verb meaning "to watch" or "to se
 ### Using cargo
 
 ```bash
-cargo install bash
+cargo install boda
 ```
 
 ### Using homebrew
