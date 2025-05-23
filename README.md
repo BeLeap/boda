@@ -1,6 +1,12 @@
 # Boda
 
-Opinionated replacement of watch.
+**Boda** is an opinionated, Rust-based alternative to the classic Linux `watch` command.
+The name *Boda* (보다) comes from the Korean verb meaning "to watch" or "to see."
+
+## Feateures
+
+- Navigate between historical outputs.
+- Persist command output into a SQLite database.
 
 ## Installation
 
