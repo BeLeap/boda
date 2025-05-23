@@ -24,7 +24,7 @@ pub struct Manager {
 
 impl Manager {
     pub fn new() -> (Manager, crossbeam_channel::Receiver<state::action::Ui>) {
-        let (tx, rx) = bounded::<state::action::Ui>(3);
+        let (tx, rx) = bounded::<state::action::Ui>(1);
 
         (Manager { action_tx: tx }, rx)
     }
