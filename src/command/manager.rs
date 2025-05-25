@@ -3,7 +3,7 @@ use std::{
     process::Command,
     sync::{Arc, RwLock},
     thread::{self, JoinHandle},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use crossbeam_channel::{select, tick, unbounded};
@@ -78,7 +78,7 @@ impl Manager {
                 let state = state.read().unwrap();
                 state.command.tick
             };
-            let ticker = tick(tick_duration);
+            let ticker = tick(Duration::from_millis(tick_duration as u64));
             // NOTE: Run at first
             self.execute(Instant::now(), &state);
 

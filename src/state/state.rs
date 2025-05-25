@@ -2,7 +2,7 @@ use std::{
     fs::File,
     path::PathBuf,
     sync::{Arc, Mutex},
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use log::{debug, error, info};
@@ -33,7 +33,7 @@ impl State {
 
         debug!("now running: {}", self.command.running_count);
 
-        tick_diff.as_millis() > (self.global.interval * 1000.0) as u128
+        tick_diff.as_millis() > (self.global.interval * 1000.0 - self.command.tick) as u128
             && (self.command.running_count < self.global.concurrency)
     }
 }
@@ -277,7 +277,7 @@ impl TargetCommand {
 
 #[derive(Debug, Clone)]
 pub struct Command {
-    pub tick: Duration,
+    pub tick: f64,
     pub prev_tick: Instant,
     pub running_count: u8,
 }
@@ -285,7 +285,7 @@ pub struct Command {
 impl Default for Command {
     fn default() -> Self {
         Command {
-            tick: Duration::from_millis(10),
+            tick: 10.0,
             prev_tick: Instant::now(),
             running_count: 0u8,
         }
