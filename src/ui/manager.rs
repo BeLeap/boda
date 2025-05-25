@@ -154,7 +154,7 @@ l: Show latest",
             Paragraph::new(if state.global.interval.as_secs() < 1 {
                 format!("{}ms", state.global.interval.as_millis())
             } else {
-                format!("{}s", state.global.interval.as_secs())
+                format!("{}s", state.global.interval.as_secs_f64())
             })
             .block(
                 Block::bordered()
