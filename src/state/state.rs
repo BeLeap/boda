@@ -2,7 +2,7 @@ use std::{
     fs::File,
     path::PathBuf,
     sync::{Arc, Mutex},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use log::{debug, error, info};
@@ -33,7 +33,7 @@ impl State {
 
         debug!("now running: {}", self.command.running_count);
 
-        tick_diff.as_millis() > (self.global.interval * 1000.0 - self.command.tick) as u128
+        tick_diff > (self.global.interval - self.command.tick)
             && (self.command.running_count < self.global.concurrency)
     }
 }
@@ -43,7 +43,7 @@ pub struct Global {
     pub running: bool,
 
     pub command: Vec<String>,
-    pub interval: f64,
+    pub interval: Duration,
     pub concurrency: u8,
 
     conn: Arc<Mutex<Connection>>,
@@ -68,9 +68,9 @@ impl Global {
         .unwrap();
 
         let interval = if cli.interval < 0.5 {
-            0.5
+            Duration::from_millis(500)
         } else {
-            cli.interval
+            Duration::from_millis((cli.interval * 1000.0) as u64)
         };
 
         Global {
@@ -277,7 +277,7 @@ impl TargetCommand {
 
 #[derive(Debug, Clone)]
 pub struct Command {
-    pub tick: f64,
+    pub tick: Duration,
     pub prev_tick: Instant,
     pub running_count: u8,
 }
@@ -285,7 +285,7 @@ pub struct Command {
 impl Default for Command {
     fn default() -> Self {
         Command {
-            tick: 10.0,
+            tick: Duration::from_millis(10),
             prev_tick: Instant::now(),
             running_count: 0u8,
         }

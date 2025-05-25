@@ -78,7 +78,7 @@ impl Manager {
                 let state = state.read().unwrap();
                 state.command.tick
             };
-            let ticker = tick(Duration::from_millis(tick_duration as u64));
+            let ticker = tick(tick_duration);
             // NOTE: Run at first
             self.execute(Instant::now(), &state);
 

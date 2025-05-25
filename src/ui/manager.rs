@@ -151,10 +151,10 @@ l: Show latest",
         let content_chunks = Layout::horizontal(layout).split(rows[1]);
 
         frame.render_widget(
-            Paragraph::new(if state.global.interval < 1.0 {
-                format!("{}ms", (state.global.interval * 1000.0) as u128)
+            Paragraph::new(if state.global.interval.as_secs() < 1 {
+                format!("{}ms", state.global.interval.as_millis())
             } else {
-                format!("{}s", state.global.interval)
+                format!("{}s", state.global.interval.as_secs())
             })
             .block(
                 Block::bordered()
