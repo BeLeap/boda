@@ -9,8 +9,26 @@ permissions:
   contents: write
 
 jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Publish to crates.io
+      run: cargo publish
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
   build:
     name: Build and Release Binaries
+    needs: publish
     runs-on: ${{ matrix.target.runs-on }}
     strategy:
       matrix:
@@ -43,26 +61,6 @@ jobs:
       with:
         name: ${{ matrix.target.triplet }}-binary
         path: target/${{ matrix.target.triplet }}/release/boda
-
-  publish:
-    name: Publish to crates.io
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Rust
-      uses: actions-rust-lang/setup-rust-toolchain@v1
-      with:
-        toolchain: stable
-
-    - name: Publish to crates.io
-      run: cargo publish
-      env:
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-
   release:
     name: Create GitHub Release
     needs: build
