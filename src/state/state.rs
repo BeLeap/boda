@@ -70,7 +70,7 @@ impl Global {
         let interval = if cli.interval < 0.5 {
             Duration::from_millis(500)
         } else {
-            Duration::from_millis((cli.interval * 1000.0) as u64)
+            Duration::from_secs_f64(cli.interval)
         };
 
         Global {
