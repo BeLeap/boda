@@ -74,7 +74,11 @@ impl Manager {
 
     pub fn run(self, state: Arc<RwLock<state::State>>) -> JoinHandle<()> {
         thread::spawn(move || {
-            let ticker = tick(Duration::from_millis(100));
+            let tick_duration = {
+                let state = state.read().unwrap();
+                state.command.tick
+            };
+            let ticker = tick(tick_duration);
             // NOTE: Run at first
             self.execute(Instant::now(), &state);
 

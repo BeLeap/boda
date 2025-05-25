@@ -2,7 +2,7 @@ use std::{
     fs::File,
     path::PathBuf,
     sync::{Arc, Mutex},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use log::{debug, error, info};
@@ -277,6 +277,7 @@ impl TargetCommand {
 
 #[derive(Debug, Clone)]
 pub struct Command {
+    pub tick: Duration,
     pub prev_tick: Instant,
     pub running_count: u8,
 }
@@ -284,6 +285,7 @@ pub struct Command {
 impl Default for Command {
     fn default() -> Self {
         Command {
+            tick: Duration::from_millis(10),
             prev_tick: Instant::now(),
             running_count: 0u8,
         }
