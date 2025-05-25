@@ -3,7 +3,7 @@ use std::{
     process::Command,
     sync::{Arc, RwLock},
     thread::{self, JoinHandle},
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use crossbeam_channel::{select, tick, unbounded};
