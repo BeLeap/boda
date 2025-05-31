@@ -194,14 +194,15 @@ impl Global {
 
     pub fn get_history(&self) -> Vec<CommandResultSummary> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt =
-            match conn.prepare("SELECT id, start, status FROM command_result ORDER BY id DESC") {
-                Ok(stmt) => stmt,
-                Err(e) => {
-                    error!("error on select: {}", e);
-                    return vec![];
-                }
-            };
+        let mut stmt = match conn
+            .prepare("SELECT id, start, end, status FROM command_result ORDER BY id DESC")
+        {
+            Ok(stmt) => stmt,
+            Err(e) => {
+                error!("error on select: {}", e);
+                return vec![];
+            }
+        };
         let result_iter = stmt
             .query_map([], |row| {
                 Ok(CommandResultSummary {
@@ -209,7 +210,11 @@ impl Global {
                     start: chrono::DateTime::from_timestamp_millis(row.get(1).unwrap())
                         .unwrap()
                         .into(),
-                    status: row.get(2).unwrap(),
+                    end: match row.get::<usize, i64>(2) {
+                        Ok(r) => Some(chrono::DateTime::from_timestamp_millis(r).unwrap().into()),
+                        Err(_) => None,
+                    },
+                    status: row.get(3).unwrap(),
                 })
             })
             .unwrap();
@@ -253,6 +258,7 @@ impl CommandResult {
 pub struct CommandResultSummary {
     pub id: u16,
     pub start: util::chrono::DateTime,
+    pub end: Option<util::chrono::DateTime>,
     pub status: Option<u8>,
 }
 
