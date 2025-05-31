@@ -225,7 +225,7 @@ l: Show latest",
             let lines = history
                 .iter()
                 .map(|summary| {
-                    let timestamp = (
+                    let start = (
                         format!("{}", summary.start.time()),
                         if state.ui.target_command.is_target(summary) {
                             Style::default().bg(Color::DarkGray)
@@ -240,7 +240,7 @@ l: Show latest",
                     };
 
                     Line::from(vec![
-                        Span::styled(timestamp.0, timestamp.1),
+                        Span::styled(start.0, start.1),
                         Span::raw(" "),
                         Span::styled(status.0, status.1),
                     ])
