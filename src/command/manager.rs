@@ -45,8 +45,10 @@ impl Manager {
         };
 
         thread::spawn(move || {
-            let now = chrono::Local::now();
-            command_tx.send(action::Command::StartRun(t, now)).unwrap();
+            let start = chrono::Local::now();
+            command_tx
+                .send(action::Command::StartRun(t, start))
+                .unwrap();
 
             let command = command.join(" ");
             let result = Command::new(shell)
@@ -55,12 +57,14 @@ impl Manager {
                 .output()
                 .unwrap();
 
+            let end = chrono::Local::now();
             let stdout = String::from_utf8_lossy(&result.stdout).to_string();
             let stderr = String::from_utf8_lossy(&result.stderr).to_string();
             let status = result.status;
 
             if let Err(e) = command_tx.send(action::Command::RunResult(
-                now,
+                start,
+                end,
                 stdout,
                 stderr,
                 status.code().unwrap() as u8,

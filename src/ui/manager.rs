@@ -15,7 +15,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Wrap},
 };
 
-use crate::{error::BodaResult, state};
+use crate::{error::BodaResult, state, util};
 
 #[derive(Debug)]
 pub struct Manager {
@@ -151,12 +151,7 @@ l: Show latest",
         let content_chunks = Layout::horizontal(layout).split(rows[1]);
 
         frame.render_widget(
-            Paragraph::new(if state.global.interval.as_secs() < 1 {
-                format!("{}ms", state.global.interval.as_millis())
-            } else {
-                format!("{}s", state.global.interval.as_secs_f64())
-            })
-            .block(
+            Paragraph::new(util::chrono::format_duration(state.global.interval)).block(
                 Block::bordered()
                     .border_style(Style::new().gray())
                     .title("Every")
@@ -175,7 +170,7 @@ l: Show latest",
         );
         frame.render_widget(
             Paragraph::new(match &result {
-                Some(r) => format!("{}", r.timestamp),
+                Some(r) => format!("{}", r.start),
                 None => "Running".to_string(),
             })
             .block(
@@ -225,25 +220,34 @@ l: Show latest",
             let lines = history
                 .iter()
                 .map(|summary| {
-                    let timestamp = (
-                        format!("{}", summary.timestamp.time()),
+                    let mut lines = vec![];
+
+                    lines.push(Span::styled(
+                        format!("{}", summary.start.time()),
                         if state.ui.target_command.is_target(summary) {
                             Style::default().bg(Color::DarkGray)
                         } else {
                             Style::default()
                         },
-                    );
+                    ));
+
+                    lines.push(Span::raw(" "));
                     let status = match summary.status {
                         Some(0) => ("0".to_string(), Style::default().fg(Color::Green)),
                         Some(s) => (format!("{}", s), Style::default().fg(Color::Red)),
                         None => ("Running".to_string(), Style::default().fg(Color::Gray)),
                     };
+                    lines.push(Span::styled(status.0, status.1));
 
-                    Line::from(vec![
-                        Span::styled(timestamp.0, timestamp.1),
-                        Span::raw(" "),
-                        Span::styled(status.0, status.1),
-                    ])
+                    if let Some(end) = summary.end {
+                        lines.push(Span::raw(" "));
+                        lines.push(Span::styled(
+                            util::chrono::format_duration((end - summary.start).to_std().unwrap()),
+                            Style::default().fg(Color::Gray),
+                        ))
+                    }
+
+                    Line::from(lines)
                 })
                 .collect::<Vec<Line>>();
             let text = Text::from(lines);

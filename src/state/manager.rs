@@ -117,14 +117,14 @@ impl Manager {
     fn handle_command_action(&self, command_action: action::Command) {
         let mut state = self.state.write().unwrap();
         match command_action {
-            action::Command::RunResult(timestamp, stdout, stderr, status) => {
+            action::Command::RunResult(start, end, stdout, stderr, status) => {
                 state
                     .global
-                    .record_command_result(timestamp, stdout, stderr, status);
+                    .record_command_result(start, end, stdout, stderr, status);
                 state.command.running_count -= 1;
             }
-            action::Command::StartRun(t, timestamp) => {
-                state.global.record_command(timestamp);
+            action::Command::StartRun(t, start) => {
+                state.global.record_command(start);
                 state.command.prev_tick = t;
                 state.command.running_count += 1;
             }
