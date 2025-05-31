@@ -175,7 +175,7 @@ l: Show latest",
         );
         frame.render_widget(
             Paragraph::new(match &result {
-                Some(r) => format!("{}", r.timestamp),
+                Some(r) => format!("{}", r.start),
                 None => "Running".to_string(),
             })
             .block(
@@ -226,7 +226,7 @@ l: Show latest",
                 .iter()
                 .map(|summary| {
                     let timestamp = (
-                        format!("{}", summary.timestamp.time()),
+                        format!("{}", summary.start.time()),
                         if state.ui.target_command.is_target(summary) {
                             Style::default().bg(Color::DarkGray)
                         } else {

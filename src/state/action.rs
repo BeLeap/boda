@@ -20,6 +20,12 @@ pub enum Ui {
 
 #[derive(Debug)]
 pub enum Command {
-    RunResult(util::chrono::DateTime, String, String, u8),
+    RunResult(
+        util::chrono::DateTime,
+        util::chrono::DateTime,
+        String,
+        String,
+        u8,
+    ),
     StartRun(Instant, util::chrono::DateTime),
 }
