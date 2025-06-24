@@ -5,7 +5,13 @@ use std::{
 };
 
 use crossbeam_channel::{bounded, select, tick};
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
+use crossterm::{
+    event::{
+        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind,
+        KeyModifiers, MouseEvent, MouseEventKind, poll,
+    },
+    execute,
+};
 use log::{debug, error};
 use ratatui::{
     DefaultTerminal, Frame,
@@ -58,9 +64,22 @@ impl Manager {
     fn handle_crossterm_events(&self) -> BodaResult<()> {
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => self.on_key_event(key),
+            Event::Mouse(mouse) => self.on_mouse_event(mouse),
             _ => {}
         }
         Ok(())
+    }
+
+    fn on_mouse_event(&self, mouse: MouseEvent) {
+        match mouse.kind {
+            MouseEventKind::ScrollUp => {
+                self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
+            }
+            MouseEventKind::ScrollDown => {
+                self.action_tx.send(state::action::Ui::ScrollDown).unwrap();
+            }
+            _ => {}
+        }
     }
 
     fn on_key_event(&self, key: KeyEvent) {
@@ -272,12 +291,16 @@ l: Show latest",
 }
 
 fn cleanup_terminal() {
+    if let Err(err) = execute!(std::io::stdout(), DisableMouseCapture) {
+        eprintln!("Error disabling mouse capture: {err}");
+    }
     ratatui::restore();
 }
 
 fn setup_terminal() -> DefaultTerminal {
     color_eyre::install().expect("unable to install color_eyre");
     let terminal = ratatui::init();
+    execute!(std::io::stdout(), EnableMouseCapture).expect("failed to enable mouse capture");
 
-    return terminal;
+    terminal
 }
