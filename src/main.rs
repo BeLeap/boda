@@ -31,11 +31,11 @@ fn main() -> error::BodaResult<()> {
     let (command_manger, command_action_rx) = command::manager::Manager::new();
     let (ui_manager, ui_action_rx) = ui::manager::Manager::new();
 
-    let command_handle = command_manger.run(state_manager.state.clone());
-    let ui_handle = ui_manager.run(state_manager.state.clone());
-    let (ui_state_handle, command_state_handle) =
-        state_manager.run(ui_action_rx, command_action_rx);
-    let handles = [command_handle, ui_handle, ui_state_handle, command_state_handle];
+    let handles = [
+        command_manger.run(state_manager.state.clone()),
+        ui_manager.run(state_manager.state.clone()),
+        state_manager.run(ui_action_rx, command_action_rx),
+    ];
     for handle in handles {
         handle.join().expect("unable to join thread");
     }
