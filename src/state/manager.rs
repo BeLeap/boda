@@ -3,15 +3,13 @@ use std::{
     sync::{Arc, RwLock},
     thread,
 };
-
-use crossbeam_channel::select;
 use log::{debug, info};
 
 use crate::Cli;
 
 use super::{action, state};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Manager {
     pub state: Arc<RwLock<state::State>>,
 }
@@ -29,29 +27,28 @@ impl Manager {
         self,
         ui_action_rx: crossbeam_channel::Receiver<action::Ui>,
         command_action_rx: crossbeam_channel::Receiver<action::Command>,
-    ) -> thread::JoinHandle<()> {
-        thread::spawn(move || {
-            loop {
-                select! {
-                    recv(ui_action_rx) -> action_recv => {
-                        if let Ok(action) = action_recv {
-                            self.handle_ui_action(action);
+    ) -> (thread::JoinHandle<()>, thread::JoinHandle<()>) {
+        let ui_manager = self.clone();
+        let ui_handle = thread::spawn(move || {
+            for action in ui_action_rx.iter() {
+                ui_manager.handle_ui_action(action);
 
-                            let state = self.state.read().unwrap();
-                            if state.global.running == false {
-                                info!("stopping state manager..");
-                                break;
-                            }
-                        }
-                    }
-                    recv(command_action_rx) -> action_recv => {
-                        if let Ok(action) = action_recv {
-                            self.handle_command_action(action);
-                        }
-                    }
+                let state = ui_manager.state.read().unwrap();
+                if !state.global.running {
+                    info!("stopping ui state manager..");
+                    break;
                 }
             }
-        })
+        });
+
+        let command_manager = self.clone();
+        let command_handle = thread::spawn(move || {
+            for action in command_action_rx.iter() {
+                command_manager.handle_command_action(action);
+            }
+        });
+
+        (ui_handle, command_handle)
     }
 
     fn handle_ui_action(&self, ui_action: action::Ui) {
