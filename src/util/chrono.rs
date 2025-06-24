@@ -6,6 +6,6 @@ pub fn format_duration(duration: Duration) -> String {
     if duration.as_secs() < 1 {
         format!("{}ms", duration.as_millis())
     } else {
-        format!("{}s", duration.as_secs_f64())
+        format!("{:.3}s", duration.as_secs_f64())
     }
 }
