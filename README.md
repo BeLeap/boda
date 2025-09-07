@@ -1,7 +1,7 @@
 # Boda
 
 **Boda** is an opinionated, Rust-based alternative to the classic Linux `watch` command.
-The name *Boda* (보다) comes from the Korean verb meaning "to watch" or "to see."
+The name *Boda* (보다) comes from the Korean verb meaning "watch".
 
 ![screenshot](./assets/screenshot.png)
 
