@@ -80,6 +80,16 @@ impl Manager {
             (_, KeyCode::Char('k')) => {
                 self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
             }
+            (KeyModifiers::CONTROL, KeyCode::Char('d') | KeyCode::Char('D')) => {
+                self.action_tx
+                    .send(state::action::Ui::ScrollHalfDown)
+                    .unwrap();
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('u') | KeyCode::Char('U')) => {
+                self.action_tx
+                    .send(state::action::Ui::ScrollHalfUp)
+                    .unwrap();
+            }
             (_, KeyCode::Char(' ')) => {
                 self.action_tx
                     .send(state::action::Ui::ToggleShowHistory)
@@ -116,6 +126,8 @@ impl Manager {
 q: Quit
 j: Scroll Down
 k: Scroll Up
+Ctrl+d: Half-page Down
+Ctrl+u: Half-page Up
 <Space>: Show History
 p: Show previous
 n: Show next

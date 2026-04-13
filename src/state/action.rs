@@ -16,6 +16,8 @@ pub enum Ui {
 
     ScrollDown,
     ScrollUp,
+    ScrollHalfDown,
+    ScrollHalfUp,
 }
 
 #[derive(Debug)]

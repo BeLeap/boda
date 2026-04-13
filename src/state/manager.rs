@@ -95,6 +95,26 @@ impl Manager {
 
                 state.ui.vertical_scroll += 1;
             }
+            action::Ui::ScrollHalfDown => {
+                let length = match state
+                    .global
+                    .get_target_command_result(&state.ui.target_command)
+                {
+                    Some(r) => r.get_content().len(),
+                    _ => return,
+                };
+
+                if length == 0 {
+                    return;
+                }
+
+                let max_scroll = (length - 1) as u16;
+                state.ui.vertical_scroll =
+                    state.ui.vertical_scroll.saturating_add(10).min(max_scroll);
+            }
+            action::Ui::ScrollHalfUp => {
+                state.ui.vertical_scroll = state.ui.vertical_scroll.saturating_sub(10);
+            }
             action::Ui::ToggleShowHistory => {
                 state.ui.show_history = !state.ui.show_history;
             }
