@@ -134,11 +134,16 @@ impl Manager {
                     .send(state::action::Ui::ToggleShowHelp)
                     .unwrap();
             }
-            (_, KeyCode::Char('p')) => {
+            (KeyModifiers::CONTROL, KeyCode::Char('p') | KeyCode::Char('P')) => {
                 self.action_tx.send(state::action::Ui::SelectPrev).unwrap();
             }
-            (_, KeyCode::Char('n')) => {
+            (KeyModifiers::CONTROL, KeyCode::Char('n') | KeyCode::Char('N')) => {
                 self.action_tx.send(state::action::Ui::SelectNext).unwrap();
+            }
+            (_, KeyCode::Char('n')) => {
+                self.action_tx
+                    .send(state::action::Ui::ToggleLineNumbers)
+                    .unwrap();
             }
             (_, KeyCode::Char('l')) => {
                 self.action_tx
@@ -165,8 +170,9 @@ k: Scroll Up
 Ctrl+d: Half-page Down
 Ctrl+u: Half-page Up
 <Space>: Show History
-p: Show previous
-n: Show next
+Ctrl+p: Show previous
+Ctrl+n: Show next
+n: Toggle line numbers
 l: Show latest",
                 ),
                 frame.area(),
@@ -237,7 +243,18 @@ l: Show latest",
                     result
                         .get_content()
                         .iter()
-                        .map(|line| Line::from(line.clone()))
+                        .enumerate()
+                        .map(|(index, line)| {
+                            let mut spans = Vec::with_capacity(2);
+                            if state.ui.show_line_numbers {
+                                spans.push(Span::styled(
+                                    format!("{:>4} ", index + 1),
+                                    Style::default().fg(Color::DarkGray),
+                                ));
+                            }
+                            spans.push(Span::raw(line.clone()));
+                            Line::from(spans)
+                        })
                         .collect::<Vec<Line>>(),
                 ),
                 match result.status {
@@ -360,6 +377,39 @@ mod tests {
         assert!(matches!(
             action_rx.try_recv().unwrap(),
             action::Ui::ScrollToBottom(20)
+        ));
+    }
+
+    #[test]
+    fn ctrl_n_selects_next() {
+        let (mut manager, action_rx) = Manager::new();
+        manager.on_key_event(KeyEvent::new(KeyCode::Char('n'), KeyModifiers::CONTROL));
+
+        assert!(matches!(
+            action_rx.try_recv().unwrap(),
+            action::Ui::SelectNext
+        ));
+    }
+
+    #[test]
+    fn ctrl_p_selects_previous() {
+        let (mut manager, action_rx) = Manager::new();
+        manager.on_key_event(KeyEvent::new(KeyCode::Char('p'), KeyModifiers::CONTROL));
+
+        assert!(matches!(
+            action_rx.try_recv().unwrap(),
+            action::Ui::SelectPrev
+        ));
+    }
+
+    #[test]
+    fn n_toggles_line_numbers() {
+        let (mut manager, action_rx) = Manager::new();
+        manager.on_key_event(KeyEvent::new(KeyCode::Char('n'), KeyModifiers::NONE));
+
+        assert!(matches!(
+            action_rx.try_recv().unwrap(),
+            action::Ui::ToggleLineNumbers
         ));
     }
 }

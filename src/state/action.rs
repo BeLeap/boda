@@ -13,6 +13,7 @@ pub enum Ui {
     SelectLatest,
 
     ToggleShowHelp,
+    ToggleLineNumbers,
 
     ScrollDown(u16),
     ScrollUp,

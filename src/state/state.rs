@@ -269,6 +269,7 @@ pub struct Ui {
     pub vertical_scroll: u16,
 
     pub show_help: bool,
+    pub show_line_numbers: bool,
     pub target_command: TargetCommand,
 }
 

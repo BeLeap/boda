@@ -133,6 +133,9 @@ impl Manager {
             action::Ui::ToggleShowHelp => {
                 state.ui.show_help = !state.ui.show_help;
             }
+            action::Ui::ToggleLineNumbers => {
+                state.ui.show_line_numbers = !state.ui.show_line_numbers;
+            }
             action::Ui::SelectNext => match state.ui.target_command {
                 state::TargetCommand::Latest => {
                     state.ui.target_command =
