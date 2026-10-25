@@ -15,7 +15,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Wrap},
 };
 
-use crate::{error::BodaResult, state, util};
+use crate::{error::BodaResult, state, state::state::max_scroll, util};
 
 const KEY_SEQUENCE_TIMEOUT: Duration = Duration::from_millis(500);
 
@@ -107,7 +107,9 @@ impl Manager {
                     .unwrap();
             }
             (_, KeyCode::Char('k')) => {
-                self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
+                self.action_tx
+                    .send(state::action::Ui::ScrollUp(self.content_height))
+                    .unwrap();
             }
             (_, KeyCode::Char('G')) => {
                 self.action_tx
@@ -121,7 +123,7 @@ impl Manager {
             }
             (KeyModifiers::CONTROL, KeyCode::Char('u') | KeyCode::Char('U')) => {
                 self.action_tx
-                    .send(state::action::Ui::ScrollHalfUp)
+                    .send(state::action::Ui::ScrollHalfUp(self.content_height))
                     .unwrap();
             }
             (_, KeyCode::Char(' ')) => {
@@ -145,6 +147,11 @@ impl Manager {
                     .send(state::action::Ui::ToggleLineNumbers)
                     .unwrap();
             }
+            (_, KeyCode::Char('t')) => {
+                self.action_tx
+                    .send(state::action::Ui::ToggleTailFollow(self.content_height))
+                    .unwrap();
+            }
             (_, KeyCode::Char('l')) => {
                 self.action_tx
                     .send(state::action::Ui::SelectLatest)
@@ -166,6 +173,7 @@ q: Quit
 j: Scroll Down
 gg: Scroll to top
 G: Scroll to bottom
+t: Toggle tail follow
 k: Scroll Up
 Ctrl+d: Half-page Down
 Ctrl+u: Half-page Up
@@ -238,10 +246,16 @@ l: Show latest",
         );
 
         if let Some(result) = result {
+            let result_lines = result.get_content();
+            let scroll_offset = output_scroll_offset(
+                state.ui.follow_tail,
+                result_lines.len(),
+                self.content_height,
+                state.ui.vertical_scroll,
+            );
             let (content, style) = (
                 Text::from(
-                    result
-                        .get_content()
+                    result_lines
                         .iter()
                         .enumerate()
                         .map(|(index, line)| {
@@ -268,7 +282,7 @@ l: Show latest",
                 Paragraph::new(content)
                     .style(style)
                     .wrap(Wrap { trim: false })
-                    .scroll((state.ui.vertical_scroll, 0)),
+                    .scroll((scroll_offset, 0)),
                 content_chunks[0].inner(Margin {
                     horizontal: 1,
                     vertical: 0,
@@ -334,6 +348,19 @@ l: Show latest",
                 }),
             );
         }
+    }
+}
+
+fn output_scroll_offset(
+    follow_tail: bool,
+    content_length: usize,
+    viewport_height: u16,
+    current_offset: u16,
+) -> u16 {
+    if follow_tail {
+        max_scroll(content_length, viewport_height)
+    } else {
+        current_offset
     }
 }
 
@@ -411,5 +438,26 @@ mod tests {
             action_rx.try_recv().unwrap(),
             action::Ui::ToggleLineNumbers
         ));
+    }
+
+    #[test]
+    fn t_toggles_tail_follow() {
+        let (mut manager, action_rx) = Manager::new();
+        manager.content_height = 24;
+        manager.on_key_event(KeyEvent::new(KeyCode::Char('t'), KeyModifiers::NONE));
+
+        assert!(matches!(
+            action_rx.try_recv().unwrap(),
+            action::Ui::ToggleTailFollow(24)
+        ));
+    }
+
+    #[test]
+    fn tail_follow_tracks_content_growth() {
+        use super::output_scroll_offset;
+
+        assert_eq!(output_scroll_offset(true, 100, 20, 5), 80);
+        assert_eq!(output_scroll_offset(true, 150, 20, 5), 130);
+        assert_eq!(output_scroll_offset(false, 150, 20, 5), 5);
     }
 }

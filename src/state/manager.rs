@@ -7,19 +7,13 @@ use std::{
 use crossbeam_channel::select;
 use log::{debug, info};
 
-use crate::Cli;
+use crate::{Cli, state::state::max_scroll};
 
 use super::{action, state};
 
 #[derive(Debug, Clone)]
 pub struct Manager {
     pub state: Arc<RwLock<state::State>>,
-}
-
-fn max_scroll(content_length: usize, viewport_height: u16) -> u16 {
-    content_length
-        .saturating_sub(usize::from(viewport_height))
-        .min(usize::from(u16::MAX)) as u16
 }
 
 impl Manager {
@@ -81,10 +75,18 @@ impl Manager {
 
                 state.global.running = false;
             }
-            action::Ui::ScrollUp => {
-                if state.ui.vertical_scroll > 0 {
-                    state.ui.vertical_scroll -= 1;
+            action::Ui::ScrollUp(viewport_height) => {
+                if state.ui.follow_tail {
+                    if let Some(result) = state
+                        .global
+                        .get_target_command_result(&state.ui.target_command)
+                    {
+                        state.ui.vertical_scroll =
+                            max_scroll(result.get_content().len(), viewport_height);
+                    }
+                    state.ui.follow_tail = false;
                 }
+                state.ui.vertical_scroll = state.ui.vertical_scroll.saturating_sub(1);
             }
             action::Ui::ScrollDown(viewport_height) => {
                 let length = match state
@@ -95,6 +97,10 @@ impl Manager {
                     _ => return,
                 };
                 let max_scroll = max_scroll(length, viewport_height);
+                if state.ui.follow_tail {
+                    state.ui.vertical_scroll = max_scroll;
+                    state.ui.follow_tail = false;
+                }
                 state.ui.vertical_scroll =
                     state.ui.vertical_scroll.saturating_add(1).min(max_scroll);
             }
@@ -108,13 +114,28 @@ impl Manager {
                 };
 
                 let max_scroll = max_scroll(length, viewport_height);
+                if state.ui.follow_tail {
+                    state.ui.vertical_scroll = max_scroll;
+                    state.ui.follow_tail = false;
+                }
                 state.ui.vertical_scroll =
                     state.ui.vertical_scroll.saturating_add(10).min(max_scroll);
             }
-            action::Ui::ScrollHalfUp => {
+            action::Ui::ScrollHalfUp(viewport_height) => {
+                if state.ui.follow_tail {
+                    if let Some(result) = state
+                        .global
+                        .get_target_command_result(&state.ui.target_command)
+                    {
+                        state.ui.vertical_scroll =
+                            max_scroll(result.get_content().len(), viewport_height);
+                    }
+                    state.ui.follow_tail = false;
+                }
                 state.ui.vertical_scroll = state.ui.vertical_scroll.saturating_sub(10);
             }
             action::Ui::ScrollToTop => {
+                state.ui.follow_tail = false;
                 state.ui.vertical_scroll = 0;
             }
             action::Ui::ScrollToBottom(viewport_height) => {
@@ -126,6 +147,15 @@ impl Manager {
                     _ => return,
                 };
                 state.ui.vertical_scroll = max_scroll(length, viewport_height);
+            }
+            action::Ui::ToggleTailFollow(viewport_height) => {
+                let length = state
+                    .global
+                    .get_target_command_result(&state.ui.target_command)
+                    .map(|result| result.get_content().len())
+                    .unwrap_or(0);
+                state.ui.vertical_scroll = max_scroll(length, viewport_height);
+                state.ui.follow_tail = !state.ui.follow_tail;
             }
             action::Ui::ToggleShowHistory => {
                 state.ui.show_history = !state.ui.show_history;
@@ -182,11 +212,12 @@ impl Manager {
 
 #[cfg(test)]
 mod tests {
-    use super::max_scroll;
+    use crate::state::state::max_scroll;
 
     #[test]
     fn max_scroll_accounts_for_viewport_height() {
         assert_eq!(max_scroll(100, 20), 80);
+        assert_eq!(max_scroll(150, 20), 130);
         assert_eq!(max_scroll(10, 20), 0);
         assert_eq!(max_scroll(usize::MAX, 0), u16::MAX);
     }

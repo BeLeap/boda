@@ -262,6 +262,12 @@ pub struct CommandResultSummary {
     pub status: Option<u8>,
 }
 
+pub fn max_scroll(content_length: usize, viewport_height: u16) -> u16 {
+    content_length
+        .saturating_sub(usize::from(viewport_height))
+        .min(usize::from(u16::MAX)) as u16
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Ui {
     pub show_history: bool,
@@ -270,6 +276,7 @@ pub struct Ui {
 
     pub show_help: bool,
     pub show_line_numbers: bool,
+    pub follow_tail: bool,
     pub target_command: TargetCommand,
 }
 
