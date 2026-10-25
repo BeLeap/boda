@@ -21,7 +21,7 @@
         packages = rec {
           boda = pkgs.rustPlatform.buildRustPackage {
             pname = "boda";
-            version = "0.2526.0";
+            version = "0.2643.0";
             src = ./.;
 
             cargoBuildFlags = "-p boda";
