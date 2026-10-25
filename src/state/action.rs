@@ -14,10 +14,12 @@ pub enum Ui {
 
     ToggleShowHelp,
 
-    ScrollDown,
+    ScrollDown(u16),
     ScrollUp,
-    ScrollHalfDown,
+    ScrollHalfDown(u16),
     ScrollHalfUp,
+    ScrollToTop,
+    ScrollToBottom(u16),
 }
 
 #[derive(Debug)]

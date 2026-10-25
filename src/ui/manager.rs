@@ -1,7 +1,7 @@
 use std::{
     sync::{Arc, RwLock},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use crossbeam_channel::{select, tick, unbounded};
@@ -17,16 +17,27 @@ use ratatui::{
 
 use crate::{error::BodaResult, state, util};
 
+const KEY_SEQUENCE_TIMEOUT: Duration = Duration::from_millis(500);
+
 #[derive(Debug)]
 pub struct Manager {
     action_tx: crossbeam_channel::Sender<state::action::Ui>,
+    pending_g: Option<Instant>,
+    content_height: u16,
 }
 
 impl Manager {
     pub fn new() -> (Manager, crossbeam_channel::Receiver<state::action::Ui>) {
         let (tx, rx) = unbounded::<state::action::Ui>();
 
-        (Manager { action_tx: tx }, rx)
+        (
+            Manager {
+                action_tx: tx,
+                pending_g: None,
+                content_height: 0,
+            },
+            rx,
+        )
     }
 }
 
@@ -55,7 +66,7 @@ impl Manager {
         })
     }
 
-    fn handle_crossterm_events(&self) -> BodaResult<()> {
+    fn handle_crossterm_events(&mut self) -> BodaResult<()> {
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => self.on_key_event(key),
             _ => {}
@@ -63,8 +74,24 @@ impl Manager {
         Ok(())
     }
 
-    fn on_key_event(&self, key: KeyEvent) {
+    fn on_key_event(&mut self, key: KeyEvent) {
         debug!("key event");
+
+        if key.modifiers.is_empty() && key.code == KeyCode::Char('g') {
+            let now = Instant::now();
+            if self
+                .pending_g
+                .is_some_and(|previous_g| now.duration_since(previous_g) <= KEY_SEQUENCE_TIMEOUT)
+            {
+                self.pending_g = None;
+                self.action_tx.send(state::action::Ui::ScrollToTop).unwrap();
+            } else {
+                self.pending_g = Some(now);
+            }
+            return;
+        }
+        self.pending_g = None;
+
         match (key.modifiers, key.code) {
             (_, KeyCode::Esc | KeyCode::Char('q'))
             | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => {
@@ -75,14 +102,21 @@ impl Manager {
                 debug!("sent quit");
             }
             (_, KeyCode::Char('j')) => {
-                self.action_tx.send(state::action::Ui::ScrollDown).unwrap();
+                self.action_tx
+                    .send(state::action::Ui::ScrollDown(self.content_height))
+                    .unwrap();
             }
             (_, KeyCode::Char('k')) => {
                 self.action_tx.send(state::action::Ui::ScrollUp).unwrap();
             }
+            (_, KeyCode::Char('G')) => {
+                self.action_tx
+                    .send(state::action::Ui::ScrollToBottom(self.content_height))
+                    .unwrap();
+            }
             (KeyModifiers::CONTROL, KeyCode::Char('d') | KeyCode::Char('D')) => {
                 self.action_tx
-                    .send(state::action::Ui::ScrollHalfDown)
+                    .send(state::action::Ui::ScrollHalfDown(self.content_height))
                     .unwrap();
             }
             (KeyModifiers::CONTROL, KeyCode::Char('u') | KeyCode::Char('U')) => {
@@ -125,6 +159,8 @@ impl Manager {
 ?: Help
 q: Quit
 j: Scroll Down
+gg: Scroll to top
+G: Scroll to bottom
 k: Scroll Up
 Ctrl+d: Half-page Down
 Ctrl+u: Half-page Up
@@ -161,6 +197,7 @@ l: Show latest",
             vec![Constraint::Percentage(100)]
         };
         let content_chunks = Layout::horizontal(layout).split(rows[1]);
+        self.content_height = content_chunks[0].height;
 
         frame.render_widget(
             Paragraph::new(util::chrono::format_duration(state.global.interval)).block(
@@ -292,4 +329,37 @@ fn setup_terminal() -> DefaultTerminal {
     let terminal = ratatui::init();
 
     return terminal;
+}
+
+#[cfg(test)]
+mod tests {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    use super::Manager;
+    use crate::state::action;
+
+    #[test]
+    fn gg_scrolls_to_top() {
+        let (mut manager, action_rx) = Manager::new();
+        manager.on_key_event(KeyEvent::new(KeyCode::Char('g'), KeyModifiers::NONE));
+        manager.on_key_event(KeyEvent::new(KeyCode::Char('g'), KeyModifiers::NONE));
+
+        assert!(matches!(
+            action_rx.try_recv().unwrap(),
+            action::Ui::ScrollToTop
+        ));
+    }
+
+    #[test]
+    fn uppercase_g_scrolls_to_bottom() {
+        let (mut manager, action_rx) = Manager::new();
+        manager.content_height = 20;
+
+        manager.on_key_event(KeyEvent::new(KeyCode::Char('G'), KeyModifiers::SHIFT));
+
+        assert!(matches!(
+            action_rx.try_recv().unwrap(),
+            action::Ui::ScrollToBottom(20)
+        ));
+    }
 }

@@ -16,6 +16,12 @@ pub struct Manager {
     pub state: Arc<RwLock<state::State>>,
 }
 
+fn max_scroll(content_length: usize, viewport_height: u16) -> u16 {
+    content_length
+        .saturating_sub(usize::from(viewport_height))
+        .min(usize::from(u16::MAX)) as u16
+}
+
 impl Manager {
     pub fn new(cli: Cli, filepath: &PathBuf) -> Manager {
         let state = state::State::new(cli, filepath);
@@ -80,7 +86,7 @@ impl Manager {
                     state.ui.vertical_scroll -= 1;
                 }
             }
-            action::Ui::ScrollDown => {
+            action::Ui::ScrollDown(viewport_height) => {
                 let length = match state
                     .global
                     .get_target_command_result(&state.ui.target_command)
@@ -88,14 +94,11 @@ impl Manager {
                     Some(r) => r.get_content().len(),
                     _ => return,
                 };
-
-                if (length - 1) as u16 <= state.ui.vertical_scroll {
-                    return;
-                }
-
-                state.ui.vertical_scroll += 1;
+                let max_scroll = max_scroll(length, viewport_height);
+                state.ui.vertical_scroll =
+                    state.ui.vertical_scroll.saturating_add(1).min(max_scroll);
             }
-            action::Ui::ScrollHalfDown => {
+            action::Ui::ScrollHalfDown(viewport_height) => {
                 let length = match state
                     .global
                     .get_target_command_result(&state.ui.target_command)
@@ -104,16 +107,25 @@ impl Manager {
                     _ => return,
                 };
 
-                if length == 0 {
-                    return;
-                }
-
-                let max_scroll = (length - 1) as u16;
+                let max_scroll = max_scroll(length, viewport_height);
                 state.ui.vertical_scroll =
                     state.ui.vertical_scroll.saturating_add(10).min(max_scroll);
             }
             action::Ui::ScrollHalfUp => {
                 state.ui.vertical_scroll = state.ui.vertical_scroll.saturating_sub(10);
+            }
+            action::Ui::ScrollToTop => {
+                state.ui.vertical_scroll = 0;
+            }
+            action::Ui::ScrollToBottom(viewport_height) => {
+                let length = match state
+                    .global
+                    .get_target_command_result(&state.ui.target_command)
+                {
+                    Some(r) => r.get_content().len(),
+                    _ => return,
+                };
+                state.ui.vertical_scroll = max_scroll(length, viewport_height);
             }
             action::Ui::ToggleShowHistory => {
                 state.ui.show_history = !state.ui.show_history;
@@ -162,5 +174,17 @@ impl Manager {
                 state.command.running_count += 1;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::max_scroll;
+
+    #[test]
+    fn max_scroll_accounts_for_viewport_height() {
+        assert_eq!(max_scroll(100, 20), 80);
+        assert_eq!(max_scroll(10, 20), 0);
+        assert_eq!(max_scroll(usize::MAX, 0), u16::MAX);
     }
 }
