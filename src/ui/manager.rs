@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use crossbeam_channel::{bounded, select, tick};
+use crossbeam_channel::{select, tick, unbounded};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, poll};
 use log::{debug, error};
 use ratatui::{
@@ -24,7 +24,7 @@ pub struct Manager {
 
 impl Manager {
     pub fn new() -> (Manager, crossbeam_channel::Receiver<state::action::Ui>) {
-        let (tx, rx) = bounded::<state::action::Ui>(1);
+        let (tx, rx) = unbounded::<state::action::Ui>();
 
         (Manager { action_tx: tx }, rx)
     }
@@ -34,7 +34,7 @@ impl Manager {
     pub fn run(mut self, state: Arc<RwLock<state::state::State>>) -> thread::JoinHandle<()> {
         thread::spawn(move || {
             let mut terminal = setup_terminal();
-            let ticker = tick(Duration::from_millis(100));
+            let ticker = tick(Duration::from_millis(16));
 
             loop {
                 select! {
@@ -46,8 +46,8 @@ impl Manager {
                         }
 
                         terminal.draw(|frame| self.render(frame, &state)).unwrap();
-                        if poll(Duration::from_secs(0)).unwrap() {
-                            self.handle_crossterm_events().unwrap()
+                        while poll(Duration::from_secs(0)).unwrap() {
+                            self.handle_crossterm_events().unwrap();
                         }
                     }
                 }
