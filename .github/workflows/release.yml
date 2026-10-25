@@ -132,6 +132,7 @@ jobs:
         run: |
           set -euo pipefail
           status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            -H "User-Agent: boda-release/${VERSION} (https://github.com/BeLeap/boda)" \
             "https://crates.io/api/v1/crates/boda/${VERSION}")"
           case "$status" in
             200) echo 'exists=true' >> "$GITHUB_OUTPUT" ;;
